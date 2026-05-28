@@ -1,5 +1,12 @@
 package global
 
-import "go-star/conf"
+import (
+	"go-star/conf"
 
-var Config *conf.Config
+	"gorm.io/gorm"
+)
+
+var (
+	Config *conf.Config
+	DB     *gorm.DB
+)
