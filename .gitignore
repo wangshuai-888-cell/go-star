@@ -1,6 +1,7 @@
 .idea
 local_settings.yaml
 tmp
+test
 main
 logs/*
 uploads/*
