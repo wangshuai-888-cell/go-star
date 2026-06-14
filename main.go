@@ -4,6 +4,7 @@ import (
 	"go-star/core"
 	"go-star/flags"
 	"go-star/global"
+	"go-star/router"
 )
 
 func main() {
@@ -13,4 +14,6 @@ func main() {
 	global.DB = core.InitDB()
 
 	flags.Run()
+
+	router.Run()
 }
