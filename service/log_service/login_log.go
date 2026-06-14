@@ -18,7 +18,6 @@ func NewLoginSuccess(c *gin.Context, loginType enum.LoginType) {
 	fmt.Println(token)
 	userID := uint(1)
 	userName := ""
-
 	global.DB.Create(&models.LogModel{
 		LogType:     enum.LoginLogType,
 		Title:       "用户登录",
