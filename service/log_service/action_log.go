@@ -8,6 +8,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/utils/jwts"
 	"io"
 	"net/http"
 	"reflect"
@@ -198,7 +199,12 @@ func (ac *ActionLog) Save() (id uint) {
 
 	ip := ac.c.ClientIP()
 	addr := core.GetIpAddr(ip)
-	userID := uint(1)
+	claims, err := jwts.ParseTokenByGin(ac.c)
+	userID := uint(0)
+	if err == nil && claims != nil {
+		userID = claims.UserID
+	}
+	
 
 	log := models.LogModel{
 		LogType: enum.ActionLogType,
@@ -210,7 +216,7 @@ func (ac *ActionLog) Save() (id uint) {
 		Addr:    addr,
 	}
 
-	err := global.DB.Create(&log).Error
+	err = global.DB.Create(&log).Error
 	if err != nil {
 		logrus.Errorf("日志创建失败 %s", err)
 		return

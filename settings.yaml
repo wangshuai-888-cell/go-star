@@ -6,6 +6,14 @@ system:
 log:
   app: go-star
   dir: logs
+jwt:
+  expire: 3
+  secret: xxx
+  issuer: xiao-wang
+redis:
+  addr: 43.108.109.73:6379
+  password: xiaowang123!
+  db: 0
 db:
   user: root
   password: 123456
