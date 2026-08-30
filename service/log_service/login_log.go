@@ -1,11 +1,11 @@
 package log_service
 
 import (
-	"fmt"
 	"go-star/core"
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,10 +14,14 @@ func NewLoginSuccess(c *gin.Context, loginType enum.LoginType) {
 	ip := c.ClientIP()
 	addr := core.GetIpAddr(ip)
 
-	token := c.GetHeader("token")
-	fmt.Println(token)
-	userID := uint(1)
+	claims, err := jwts.ParseTokenByGin(c)
+	userID := uint(0)
 	userName := ""
+	if err == nil && claims != nil {
+		userID = claims.UserID
+		userName = claims.UserName
+	}
+
 	global.DB.Create(&models.LogModel{
 		LogType:     enum.LoginLogType,
 		Title:       "用户登录",
