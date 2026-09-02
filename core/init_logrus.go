@@ -65,6 +65,7 @@ type FileDateHook struct {
 func (hook FileDateHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
+
 func (hook FileDateHook) Fire(entry *logrus.Entry) error {
 	timer := entry.Time.Format("2006-01-02")
 	line, _ := entry.String()

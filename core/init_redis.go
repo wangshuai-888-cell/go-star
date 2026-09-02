@@ -17,6 +17,7 @@ func InitRedis() *redis.Client {
 	_, err := redisDB.Ping().Result()
 	if err != nil {
 		logrus.Errorf("连接redis失败 %s", err)
+		return nil
 	}
 	logrus.Info("连接redis成功")
 	return redisDB

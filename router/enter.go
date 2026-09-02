@@ -8,8 +8,8 @@ import (
 )
 
 func Run() {
-	gin.SetMode(global.Config.System.GinMode)
-	r := gin.Default()
+	gin.SetMode(global.Config.System.GinMode) // 设置gin的模式，读取的是settings.yaml文件中的gin_mode
+	r := gin.Default() // 创建gin实例
 
 	r.Static("/uploads", "uploads")
 

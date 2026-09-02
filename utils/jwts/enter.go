@@ -63,8 +63,11 @@ func ParseToken(tokenString string) (*MyClaims, error) {
 	return nil, errors.New("invalid token")
 }
 
+// 获取token
 func ParseTokenByGin(c *gin.Context) (*MyClaims, error) {
+	// 先从请求头中获取token
 	token := c.GetHeader("token")
+	// 如果请求头中没有token，就从请求参数中获取token
 	if token == "" {
 		token = c.Query("token")
 	}
