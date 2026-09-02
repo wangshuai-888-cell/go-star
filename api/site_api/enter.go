@@ -11,7 +11,6 @@ type SiteApi struct {
 
 func (SiteApi) SiteInfoView(c *gin.Context) {
 	res.OKWithData("xx", c)
-	return
 }
 
 type SiteUpdateRequest struct {
@@ -27,5 +26,4 @@ func (SiteApi) SiteUpdateView(c *gin.Context) {
 		return
 	}
 	res.OKWithMsg("更新成功", c)
-	return
 }
