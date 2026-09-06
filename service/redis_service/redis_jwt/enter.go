@@ -25,13 +25,13 @@ func (b BlackType) String() string {
 func (b BlackType) Msg() string {
 	switch b {
 	case UserBlackType:
-		return "已注销"
+		return "已退出"
 	case AdminBlackType:
 		return "禁止登录"
 	case DeviceBlackType:
 		return "设备下线"
 	}
-	return "已注销"
+	return "已退出"
 }
 
 func ParseBlackType(val string) BlackType {
