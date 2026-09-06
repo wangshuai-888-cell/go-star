@@ -17,7 +17,12 @@ func Run() {
 
 	nr.Use(middleware.LogMiddleware)
 	SiteRouter(nr)
-	LogRouter(nr)
+	UserRouter(nr)
+
+	// 日志接口需要管理员权限，在入口显式挂中间件，避免污染整个 /api 组
+	logGroup := nr.Group("")
+	logGroup.Use(middleware.AdminMiddleware)
+	LogRouter(logGroup)
 
 	addr := global.Config.System.Addr()
 	r.Run(addr)
