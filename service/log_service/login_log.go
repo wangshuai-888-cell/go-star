@@ -5,22 +5,13 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
-	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
 )
 
-func NewLoginSuccess(c *gin.Context, loginType enum.LoginType) {
+func NewLoginSuccess(c *gin.Context, loginType enum.LoginType, userID uint, userName string) {
 	ip := c.ClientIP()
 	addr := core.GetIpAddr(ip)
-
-	claims, err := jwts.ParseTokenByGin(c)
-	userID := uint(0)
-	userName := ""
-	if err == nil && claims != nil {
-		userID = claims.UserID
-		userName = claims.UserName
-	}
 
 	global.DB.Create(&models.LogModel{
 		LogType:     enum.LoginLogType,
