@@ -8,15 +8,15 @@ log:
   dir: logs
 jwt:
   expire: 3
-  secret: xxx
-  issuer: xiao-wang
+  secret: change-me
+  issuer: your-issuer
 redis:
-  addr: 43.108.109.73:6379
-  password: xiaowang123!
+  addr: 127.0.0.1:6379
+  password: ""
   db: 0
 db:
   user: root
-  password: 123456
+  password: ""
   host: 127.0.0.1
   port: 3306
   db: go_star
@@ -24,7 +24,7 @@ db:
   source: mysql
 db1:
   user: root
-  password: 123456
+  password: ""
   host: 127.0.0.1
   port: 3306
   db: go_star
