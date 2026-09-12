@@ -40,7 +40,6 @@ func (CategoryApi) CategoryCreateView(c *gin.Context) {
 
 type CategoryListRequest struct {
 	common.PageInfo
-	Role enum.RoleType `form:"role"`
 }
 
 func (CategoryApi) CategoryListView(c *gin.Context) {

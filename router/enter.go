@@ -8,7 +8,7 @@ import (
 )
 
 func Run() {
-	gin.SetMode(global.Config.System.GinMode) // 设置gin的模式，读取的是settings.yaml文件中的gin_mode
+	gin.SetMode(global.Config.System.GinMode) // 设置 gin 模式，来自 -f 指定的配置文件
 	r := gin.Default()                        // 创建gin实例
 
 	r.Static("/uploads", "uploads")
@@ -19,6 +19,7 @@ func Run() {
 	SiteRouter(nr)
 	UserRouter(nr)
 	CategoryRouter(nr)
+	ArticleRouter(nr)
 
 	// 日志接口需要管理员权限，在入口显式挂中间件，避免污染整个 /api 组
 	logGroup := nr.Group("")

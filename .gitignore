@@ -1,5 +1,6 @@
 .idea
 local_settings.yaml
+prod_settings.yaml
 tmp
 test
 main
