@@ -2,7 +2,10 @@
 local_settings.yaml
 prod_settings.yaml
 tmp
+tmp/
 test
 main
+main.exe
+build-errors.log
 logs/*
 uploads/*

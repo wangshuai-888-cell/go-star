@@ -1,0 +1,34 @@
+# Air 热重载配置：改代码后自动编译并重启
+# 使用：在项目根目录执行 air
+
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Windows 下输出带 .exe
+  cmd = "go build -o ./tmp/main.exe ."
+  bin = "tmp/main.exe"
+  # 默认读 local_settings.yaml；若要用 settings.yaml 可改成：args_bin = ["-f", "settings.yaml"]
+  args_bin = []
+  delay = 1000
+  include_ext = ["go", "yaml", "yml", "toml"]
+  exclude_dir = ["tmp", "vendor", "testdata", "logs", "uploads", "data", ".git", ".idea"]
+  exclude_regex = ["_test\\.go"]
+  exclude_unchanged = true
+  follow_symlink = false
+  kill_delay = "500ms"
+  send_interrupt = true
+  stop_on_error = true
+
+[log]
+  time = true
+  main_only = false
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+
+[misc]
+  clean_on_exit = true
