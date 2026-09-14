@@ -14,4 +14,5 @@ func ArticleRouter(r *gin.RouterGroup) {
 	r.GET("articles/:id", middleware.AuthMiddleware, app.ArticleDetailView)
 	r.PUT("articles/:id", middleware.AuthMiddleware, app.ArticleUpdateView)
 	r.DELETE("articles/:id", middleware.AuthMiddleware, app.ArticleRemoveView)
+	r.POST("articles/:id/digg", middleware.AuthMiddleware, app.ArticleDiggView)
 }
