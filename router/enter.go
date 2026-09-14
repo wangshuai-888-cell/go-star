@@ -20,6 +20,8 @@ func Run() {
 	UserRouter(nr)
 	CategoryRouter(nr)
 	ArticleRouter(nr)
+	ImageRouter(nr)
+	CommentRouter(nr)
 
 	// 日志接口需要管理员权限，在入口显式挂中间件，避免污染整个 /api 组
 	logGroup := nr.Group("")

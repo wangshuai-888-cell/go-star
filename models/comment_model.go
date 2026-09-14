@@ -9,7 +9,7 @@ type CommentModel struct {
 	ArticleModel   ArticleModel    `gorm:"foreignKey:ArticleID" json:"-"`
 	ParentID       *uint           `json:"parentID"` // 父评论
 	ParentModel    *CommentModel   `gorm:"foreignKey:ParentID" json:"-"`
-	SubCommentList []*CommentModel `gorm:"foreignKey:ParentID" json:"-"` // 子评论列表
-	RootParentID   *uint           `json:"rootParentID"`                 // 根评论
-	DiggCount      uint            `json:"diggCount"`                    // 评论点赞数
+	SubCommentList []*CommentModel `gorm:"foreignKey:ParentID" json:"subCommentList"` // 子评论列表
+	RootParentID   *uint           `json:"rootParentID"`                              // 根评论
+	DiggCount      uint            `json:"diggCount"`                                 // 评论点赞数
 }
