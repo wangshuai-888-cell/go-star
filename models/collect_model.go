@@ -6,6 +6,6 @@ type CollectModel struct {
 	Abstract     string    `gorm:"size: 256" json:"abstract"`
 	Cover        string    `gorm:"size: 256" json:"cover"`
 	ArticleCount int       `json:"articleCount"`
-	UserID       uint64    `json:"userID"`
+	UserID       uint      `json:"userID"`
 	UserModel    UserModel `gorm:"foreignKey:UserID" json:"-"`
 }
