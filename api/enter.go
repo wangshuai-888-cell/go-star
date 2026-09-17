@@ -5,6 +5,7 @@ import (
 	categoryapi "go-star/api/category_api"
 	"go-star/api/collect_api"
 	"go-star/api/comment_api"
+	"go-star/api/history_api"
 	"go-star/api/image_api"
 	"go-star/api/log_api"
 	"go-star/api/user_api"
@@ -18,6 +19,7 @@ type Api struct {
 	ImageApi    image_api.ImageApi
 	CommentApi  comment_api.CommentApi
 	CollectApi  collect_api.CollectApi
+	HistoryApi  history_api.HistoryApi
 }
 
 var App = Api{}

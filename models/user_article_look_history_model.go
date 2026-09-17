@@ -6,5 +6,5 @@ type UserArticleLookHistoryModel struct {
 	UserID       uint         `json:"userId"`
 	UserModel    UserModel    `gorm:"foreignKey:UserID" json:"-"`
 	ArticleID    uint         `json:"articleId"`
-	ArticleModel ArticleModel `gorm:"foreignKey:ArticleID" json:"-"`
+	ArticleModel ArticleModel `gorm:"foreignKey:ArticleID" json:"article"`
 }
