@@ -23,6 +23,7 @@ func Run() {
 	CommentRouter(nr)
 	CollectRouter(nr)
 	HistoryRouter(nr)
+	NotificationRouter(nr)
 
 	// 日志接口需要管理员权限，在入口显式挂中间件，避免污染整个 /api 组
 	logGroup := nr.Group("")
