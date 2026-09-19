@@ -2,6 +2,7 @@ package api
 
 import (
 	"go-star/api/article_api"
+	"go-star/api/banner_api"
 	categoryapi "go-star/api/category_api"
 	"go-star/api/collect_api"
 	"go-star/api/comment_api"
@@ -22,6 +23,7 @@ type Api struct {
 	CollectApi      collect_api.CollectApi
 	HistoryApi      history_api.HistoryApi
 	NotificationApi notification_api.NotificationApi
+	BannerApi       banner_api.BannerApi
 }
 
 var App = Api{}
