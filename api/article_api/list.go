@@ -5,6 +5,7 @@ import (
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
+	"go-star/service/redis_service/redis_article"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,6 +41,10 @@ func (ArticleApi) ArticleListView(c *gin.Context) {
 	if err != nil {
 		res.FailWithMsg("获取文章列表失败", c)
 		return
+	}
+	// 列表上的 lookCount 补上还没落库的那几次数，避免和详情对不上
+	for i := range list {
+		list[i].LookCount += redis_article.UnflushedLook(list[i].ID)
 	}
 	res.OKWithList(list, count, c)
 }
