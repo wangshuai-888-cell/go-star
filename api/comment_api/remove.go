@@ -5,6 +5,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -40,5 +41,6 @@ func (CommentApi) CommentRemoveView(c *gin.Context) {
 		res.FailWithMsg("删除失败", c)
 		return
 	}
+	redis_article.ClearDetail(comment.ArticleID)
 	res.OKWithMsg("删除成功", c)
 }
