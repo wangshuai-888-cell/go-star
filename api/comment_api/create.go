@@ -4,6 +4,7 @@ import (
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
+	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -72,5 +73,6 @@ func (CommentApi) CommentCreateView(c *gin.Context) {
 		res.FailWithMsg("评论失败", c)
 		return
 	}
+	redis_article.ClearDetail(article.ID)
 	res.OKWithData(comment, c)
 }

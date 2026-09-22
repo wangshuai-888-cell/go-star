@@ -4,6 +4,7 @@ import (
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
+	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -55,6 +56,7 @@ func (ArticleApi) ArticleDiggView(c *gin.Context) {
 		res.FailWithMsg("操作失败", c)
 		return
 	}
+	redis_article.ClearDetail(article.ID)
 	_ = global.DB.Take(&article, article.ID)
 	res.OKWithData(gin.H{
 		"digg":      digged,

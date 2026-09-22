@@ -6,6 +6,7 @@ import (
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
+	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -96,6 +97,7 @@ func (CollectApi) ArticleCollectView(c *gin.Context) {
 	}
 
 	_ = global.DB.Take(&article, article.ID)
+	redis_article.ClearDetail(article.ID)
 	res.OKWithData(gin.H{
 		"collected":    collected,
 		"collectCount": article.CollectCount,
