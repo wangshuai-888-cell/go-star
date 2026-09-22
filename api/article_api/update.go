@@ -5,6 +5,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -83,5 +84,6 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 		return
 	}
 
+	redis_article.ClearDetail(article.ID)
 	res.OKWithMsg("修改成功", c)
 }

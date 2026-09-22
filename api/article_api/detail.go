@@ -22,15 +22,16 @@ func (ArticleApi) ArticleDetailView(c *gin.Context) {
 	claims := _claims.(*jwts.MyClaims)
 
 	var article models.ArticleModel
-	if err := global.DB.Take(&article, idCr.ID).Error; err != nil {
-		res.FailWithMsg("文章不存在", c)
-		return
+	// 如果redis中没有，再从数据库中找
+	if !redis_article.GetDetail(idCr.ID, &article) {
+		if err := global.DB.Take(&article, idCr.ID).Error; err != nil {
+			res.FailWithMsg("文章不存在", c)
+			return
+		}
+		// 如果数据库中有，就存入redis中一份
+		redis_article.SetDetail(article)
 	}
 
-	// 浏览数+1
-	// global.DB.Model(&article).Update("look_count", article.LookCount+1) // 这种写法是先增加在写入数据库，如果数据库有并发操作，可能会导致数据不准确
-	// global.DB.Model(&article).Update("look_count", gorm.Expr("look_count + ?", 1)) // 这种写法是先计算在写入数据库，可以避免并发操作导致数据不准确
-	// article.LookCount++
 	// 浏览数先记 Redis，攒够再写数据库
 	showAdd, flush, err := redis_article.AddLook(article.ID)
 	if err != nil {
@@ -40,6 +41,7 @@ func (ArticleApi) ArticleDetailView(c *gin.Context) {
 	} else {
 		if flush > 0 {
 			global.DB.Model(&article).Update("look_count", gorm.Expr("look_count + ?", flush))
+			redis_article.ClearDetail(article.ID)
 		}
 		article.LookCount += showAdd
 	}
