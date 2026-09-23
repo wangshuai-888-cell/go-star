@@ -35,6 +35,7 @@ func AddLook(articleID uint) (showAdd int, flush int, err error) {
 	return int(n % int64(lookFlushStep)), 0, nil
 }
 
+// 获取未写入数据库的浏览数，取的是余数
 func UnflushedLook(articleID uint) int {
 	if global.Redis == nil {
 		return 0

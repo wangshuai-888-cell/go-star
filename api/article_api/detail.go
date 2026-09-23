@@ -44,6 +44,7 @@ func (ArticleApi) ArticleDetailView(c *gin.Context) {
 			redis_article.ClearDetail(article.ID)
 		}
 		article.LookCount += showAdd
+		redis_article.AddHotScore(article.ID, redis_article.ScoreLook)
 	}
 
 	var history models.UserArticleLookHistoryModel

@@ -56,6 +56,11 @@ func (ArticleApi) ArticleDiggView(c *gin.Context) {
 		res.FailWithMsg("操作失败", c)
 		return
 	}
+	if digged {
+		redis_article.AddHotScore(article.ID, redis_article.ScoreDigg)
+	} else {
+		redis_article.AddHotScore(article.ID, -redis_article.ScoreDigg)
+	}
 	redis_article.ClearDetail(article.ID)
 	_ = global.DB.Take(&article, article.ID)
 	res.OKWithData(gin.H{

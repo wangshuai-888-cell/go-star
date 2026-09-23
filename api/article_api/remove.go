@@ -41,5 +41,6 @@ func (ArticleApi) ArticleRemoveView(c *gin.Context) {
 	}
 	redis_article.ClearLook(article.ID)
 	redis_article.ClearDetail(article.ID)
+	redis_article.RemoveHot(article.ID)
 	res.OKWithMsg("删除成功", c)
 }
