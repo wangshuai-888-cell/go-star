@@ -9,10 +9,10 @@ import (
 const hotKey = "article:hot"
 
 const (
-	ScoreLook    = 1
-	ScoreDigg    = 3
-	ScoreComment = 2
-	ScoreCollect = 2
+	ScoreLook    = 1 // 浏览量
+	ScoreDigg    = 3 // 点赞
+	ScoreComment = 2 // 评论
+	ScoreCollect = 2 // 收藏
 )
 
 func AddHotScore(articleID uint, score float64) {
