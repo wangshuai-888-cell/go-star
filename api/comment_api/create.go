@@ -67,13 +67,13 @@ func (CommentApi) CommentCreateView(c *gin.Context) {
 		if err := tx.Create(&comment).Error; err != nil {
 			return err
 		}
-		redis_article.AddHotScore(article.ID, redis_article.ScoreComment)
 		return tx.Model(&article).Update("comment_count", gorm.Expr("comment_count + ?", 1)).Error
 	})
 	if err != nil {
 		res.FailWithMsg("评论失败", c)
 		return
 	}
+	redis_article.AddHotScore(article.ID, redis_article.ScoreComment)
 	redis_article.ClearDetail(article.ID)
 	res.OKWithData(comment, c)
 }
