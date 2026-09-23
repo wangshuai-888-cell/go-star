@@ -98,6 +98,11 @@ func (CollectApi) ArticleCollectView(c *gin.Context) {
 
 	_ = global.DB.Take(&article, article.ID)
 	redis_article.ClearDetail(article.ID)
+	if collected {
+		redis_article.AddHotScore(article.ID, redis_article.ScoreCollect)
+	} else {
+		redis_article.AddHotScore(article.ID, -redis_article.ScoreCollect)
+	}
 	res.OKWithData(gin.H{
 		"collected":    collected,
 		"collectCount": article.CollectCount,
