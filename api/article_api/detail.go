@@ -47,16 +47,21 @@ func (ArticleApi) ArticleDetailView(c *gin.Context) {
 		redis_article.AddHotScore(article.ID, redis_article.ScoreLook)
 	}
 
-	var history models.UserArticleLookHistoryModel
-	err = global.DB.Where("user_id = ? AND article_id = ?", claims.UserID, article.ID).Take(&history).Error
-	if err != nil {
-		global.DB.Create(&models.UserArticleLookHistoryModel{
-			UserID:    claims.UserID,
-			ArticleID: article.ID,
-		})
-	} else {
-		global.DB.Model(&history).Update("updated_at", gorm.Expr("NOW()"))
-	}
+	userID := claims.UserID
+	articleID := article.ID
+	// go func() { ... }() 的意思是：立刻新开一条执行路径去跑大括号里的代码，当前函数不等它结束，继续往下执行res.OKWithData()，异步执行
+	go func() {
+		var history models.UserArticleLookHistoryModel
+		err := global.DB.Where("user_id = ? AND article_id = ?", userID, articleID).Take(&history).Error
+		if err != nil {
+			_ = global.DB.Create(&models.UserArticleLookHistoryModel{
+				UserID:    userID,
+				ArticleID: articleID,
+			}).Error
+			return
+		}
+		_ = global.DB.Model(&history).Update("updated_at", gorm.Expr("NOW()")).Error
+	}()
 
 	res.OKWithData(article, c)
 }

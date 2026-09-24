@@ -100,6 +100,11 @@ func (UserApi) RegisterView(c *gin.Context) {
 		return
 	}
 
+	_ = global.DB.Create(&models.UserConfModel{
+		UserID:      user.ID,
+		OpenCollect: false,
+	}).Error
+
 	token, err := jwts.GetToken(jwts.Claims{
 		UserID:   user.ID,
 		UserName: user.Username,

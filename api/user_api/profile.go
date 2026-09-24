@@ -130,3 +130,40 @@ func (UserApi) UpdateUserView(c *gin.Context) {
 
 	res.OKWithMsg("更新用户信息成功", c)
 }
+
+type UpdateConfRequest struct {
+	OpenCollect *bool `json:"openCollect" binding:"required"`
+}
+
+func (UserApi) UpdateConfView(c *gin.Context) {
+	var cr UpdateConfRequest
+	if err := c.ShouldBindJSON(&cr); err != nil {
+		res.FailWithError(err, c)
+		return
+	}
+
+	_claims, _ := c.Get("claims")
+	claims := _claims.(*jwts.MyClaims)
+
+	var conf models.UserConfModel
+	err := global.DB.Take(&conf, "user_id = ?", claims.UserID).Error
+	if err != nil {
+		conf = models.UserConfModel{
+			UserID:      claims.UserID,
+			OpenCollect: *cr.OpenCollect,
+		}
+		if err := global.DB.Create(&conf).Error; err != nil {
+			res.FailWithMsg("更新配置失败", c)
+			return
+		}
+		res.OKWithData(conf, c)
+		return
+	}
+
+	if err := global.DB.Model(&conf).Update("open_collect", *cr.OpenCollect).Error; err != nil {
+		res.FailWithMsg("更新配置失败", c)
+		return
+	}
+	conf.OpenCollect = *cr.OpenCollect
+	res.OKWithData(conf, c)
+}
