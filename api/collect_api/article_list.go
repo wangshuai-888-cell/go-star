@@ -36,8 +36,10 @@ func (CollectApi) CollectArticleListView(c *gin.Context) {
 		return
 	}
 	if collect.UserID != claims.UserID && claims.Role != enum.AdminRole {
-		res.FailWithMsg("权限不足", c)
-		return
+		if !canViewCollect(collect.UserID) {
+			res.FailWithMsg("该用户未公开收藏夹", c)
+			return
+		}
 	}
 
 	// 注意，这里用的是文章与收藏夹的关联表，关联表虽然存的字段很少，但是能同时获取两张表中关联的数据的全部信息
