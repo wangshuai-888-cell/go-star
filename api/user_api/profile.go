@@ -132,13 +132,20 @@ func (UserApi) UpdateUserView(c *gin.Context) {
 }
 
 type UpdateConfRequest struct {
-	OpenCollect *bool `json:"openCollect" binding:"required"`
+	OpenCollect *bool `json:"openCollect"`
+	OpenFollow  *bool `json:"openFollow"`
+	OpenFans    *bool `json:"openFans"`
 }
 
 func (UserApi) UpdateConfView(c *gin.Context) {
 	var cr UpdateConfRequest
 	if err := c.ShouldBindJSON(&cr); err != nil {
 		res.FailWithError(err, c)
+		return
+	}
+
+	if cr.OpenCollect == nil && cr.OpenFollow == nil && cr.OpenFans == nil {
+		res.FailWithMsg("请至少传入一个配置项", c)
 		return
 	}
 
@@ -149,21 +156,41 @@ func (UserApi) UpdateConfView(c *gin.Context) {
 	err := global.DB.Take(&conf, "user_id = ?", claims.UserID).Error
 	if err != nil {
 		conf = models.UserConfModel{
-			UserID:      claims.UserID,
-			OpenCollect: *cr.OpenCollect,
+			UserID: claims.UserID,
+		}
+		if cr.OpenCollect != nil {
+			conf.OpenCollect = *cr.OpenCollect
+		}
+		if cr.OpenFollow != nil {
+			conf.OpenFollow = *cr.OpenFollow
+		}
+		if cr.OpenFans != nil {
+			conf.OpenFans = *cr.OpenFans
 		}
 		if err := global.DB.Create(&conf).Error; err != nil {
 			res.FailWithMsg("更新配置失败", c)
 			return
 		}
+
 		res.OKWithData(conf, c)
 		return
 	}
-
-	if err := global.DB.Model(&conf).Update("open_collect", *cr.OpenCollect).Error; err != nil {
+	updates := map[string]any{}
+	if cr.OpenCollect != nil {
+		updates["open_collect"] = *cr.OpenCollect
+		conf.OpenCollect = *cr.OpenCollect
+	}
+	if cr.OpenFollow != nil {
+		updates["open_follow"] = *cr.OpenFollow
+		conf.OpenFollow = *cr.OpenFollow
+	}
+	if cr.OpenFans != nil {
+		updates["open_fans"] = *cr.OpenFans
+		conf.OpenFans = *cr.OpenFans
+	}
+	if err := global.DB.Model(&models.UserConfModel{}).Where("user_id = ?", claims.UserID).Updates(updates).Error; err != nil {
 		res.FailWithMsg("更新配置失败", c)
 		return
 	}
-	conf.OpenCollect = *cr.OpenCollect
 	res.OKWithData(conf, c)
 }

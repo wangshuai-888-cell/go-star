@@ -20,4 +20,7 @@ func UserRouter(r *gin.RouterGroup) {
 	r.GET("users/:id", middleware.AdminMiddleware, app.UserDetailView)                      // 获取用户详情
 	r.PUT("users/:id/role", middleware.AdminMiddleware, app.UpdateRoleView)
 	r.PUT("user/conf", middleware.AuthMiddleware, app.UpdateConfView) // 更新用户配置
+	r.POST("users/:id/follow", middleware.AuthMiddleware, app.UserFollowView)
+	r.GET("users/:id/follows", middleware.AuthMiddleware, app.UserFollowListView)
+	r.GET("users/:id/fans", middleware.AuthMiddleware, app.UserFansListView)
 }
