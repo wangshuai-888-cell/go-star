@@ -53,8 +53,19 @@ func (CollectApi) CollectListView(c *gin.Context) {
 
 func canViewCollect(userID uint) bool {
 	var conf models.UserConfModel
-	if err := global.DB.Take(&conf, "user_id = ?", userID).Error; err != nil {
+	err := global.DB.Take(&conf, "user_id = ?", userID).Error
+	if err != nil {
+		// 没有配置行
+		return openCollectAllowed(false, false)
+	}
+	// 有配置行，把是否公开传进去
+	return openCollectAllowed(true, conf.OpenCollect)
+}
+
+// confExists：有没有配置行；openCollect：是否公开
+func openCollectAllowed(confExists, openCollect bool) bool {
+	if !confExists {
 		return false
 	}
-	return conf.OpenCollect
+	return openCollect
 }
