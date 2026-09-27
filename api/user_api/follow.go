@@ -36,6 +36,7 @@ func (UserApi) UserFollowView(c *gin.Context) {
 	var row models.UserFollowModel
 	err := global.DB.Where("user_id = ? AND follow_user_id = ?", claims.UserID, target.ID).
 		Take(&row).Error
+	// 如果已经关注，则取消关注
 	if err == nil {
 		if err := global.DB.Where("user_id = ? AND follow_user_id = ?", claims.UserID, target.ID).
 			Delete(&models.UserFollowModel{}).Error; err != nil {
@@ -51,6 +52,14 @@ func (UserApi) UserFollowView(c *gin.Context) {
 			return
 		}
 		followed = true
+		fromID := claims.UserID
+		models.CreateUserMessage(models.UserMessageModel{
+			RevUserID:  target.ID,
+			Type:       enum.MessageTypeFollow,
+			Title:      "新增关注",
+			Content:    "有人关注了你",
+			FromUserID: &fromID,
+		})
 	}
 
 	res.OKWithData(gin.H{"followed": followed}, c)

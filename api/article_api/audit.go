@@ -83,5 +83,25 @@ func (ArticleApi) ArticleAuditView(c *gin.Context) {
 		return
 	}
 	redis_article.ClearDetail(article.ID)
+
+	articleID := article.ID
+	if cr.Pass {
+		models.CreateUserMessage(models.UserMessageModel{
+			RevUserID: article.UserID,
+			Type:      enum.MessageTypeAuditPass,
+			Title:     "审核通过",
+			Content:   "你的文章《" + article.Title + "》已通过审核",
+			ArticleID: &articleID,
+		})
+	} else {
+		models.CreateUserMessage(models.UserMessageModel{
+			RevUserID: article.UserID,
+			Type:      enum.MessageTypeAuditReject,
+			Title:     "审核驳回",
+			Content:   "你的文章《" + article.Title + "》未通过审核",
+			ArticleID: &articleID,
+		})
+	}
+
 	res.OKWithMsg(msg, c)
 }
