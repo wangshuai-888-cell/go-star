@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type ArticleModel struct {
 	Model
@@ -19,4 +23,5 @@ type ArticleModel struct {
 	CollectCount int            `json:"collectCount"` // 收藏数
 	OpenComment  bool           `json:"openComment"`  // 开启评论
 	Status       int8           `json:"status"`       // 状态(草稿、审核中、已发布)
+	PublishAt    *time.Time     `json:"publishAt"`    // 计划发布时间；nil 表示不定时
 }

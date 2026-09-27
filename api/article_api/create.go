@@ -6,19 +6,21 @@ import (
 	"go-star/models"
 	"go-star/models/enum"
 	"go-star/utils/jwts"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ArticleCreateRequest struct {
-	Title       string   `json:"title" binding:"required"`      // 标题
-	Abstract    string   `json:"abstract"`                      // 简介
-	Content     string   `json:"content" binding:"required"`    // 内容
-	CategoryID  uint     `json:"categoryID" binding:"required"` // 分类ID
-	TagList     []string `json:"tagList"`                       // 标签列表
-	Cover       string   `json:"cover"`                         // 封面
-	OpenComment bool     `json:"openComment"`                   // 是否开启评论
-	Status      int8     `json:"status"`                        // 1草稿 2审核中 3已发布
+	Title       string     `json:"title" binding:"required"`      // 标题
+	Abstract    string     `json:"abstract"`                      // 简介
+	Content     string     `json:"content" binding:"required"`    // 内容
+	CategoryID  uint       `json:"categoryID" binding:"required"` // 分类ID
+	TagList     []string   `json:"tagList"`                       // 标签列表
+	Cover       string     `json:"cover"`                         // 封面
+	OpenComment bool       `json:"openComment"`                   // 是否开启评论
+	Status      int8       `json:"status"`                        // 1草稿 2审核中 3已发布
+	PublishAt   *time.Time `json:"publishAt"`                     // 可选，定时发布时间
 }
 
 func (ArticleApi) ArticleCreateView(c *gin.Context) {
@@ -26,6 +28,11 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 	err := c.ShouldBindJSON(&cr)
 	if err != nil {
 		res.FailWithError(err, c)
+		return
+	}
+
+	if cr.PublishAt != nil && !cr.PublishAt.After(time.Now()) {
+		res.FailWithMsg("定时发布时间必须是未来时间", c)
 		return
 	}
 
@@ -62,6 +69,7 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 		UserID:      claims.UserID,
 		OpenComment: cr.OpenComment,
 		Status:      status,
+		PublishAt:   cr.PublishAt,
 	}).Error
 	if err != nil {
 		res.FailWithMsg("创建失败", c)
