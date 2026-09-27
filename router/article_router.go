@@ -18,4 +18,6 @@ func ArticleRouter(r *gin.RouterGroup) {
 	r.POST("articles/:id/digg", middleware.AuthMiddleware, app.ArticleDiggView)
 	r.POST("articles/:id/top", middleware.AuthMiddleware, app.ArticleTopView)
 	r.GET("users/:id/top-articles", middleware.AuthMiddleware, app.UserTopArticleListView)
+	r.POST("articles/:id/submit", middleware.AuthMiddleware, app.ArticleSubmitView)
+	r.POST("articles/:id/audit", middleware.AdminMiddleware, app.ArticleAuditView)
 }
