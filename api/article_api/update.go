@@ -61,8 +61,27 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 	}
 
 	status := cr.Status
-	if status == 0 {
-		status = article.Status // 不传则保持原状态
+
+	if claims.Role != enum.AdminRole {
+		switch article.Status {
+		case int8(enum.ArticleStatusReview):
+			res.FailWithMsg("审核中不可修改", c)
+			return
+		case int8(enum.ArticleStatusPublished):
+			// 已发布被改内容，回到草稿，重新提交
+			status = int8(enum.ArticleStatusDraft)
+		case int8(enum.ArticleStatusDraft), int8(enum.ArticleStatusRejected):
+			// 允许改，若前端乱传status，强制仍为草稿/保持驳回后可再提交
+			if cr.Status != 0 && cr.Status != int8(enum.ArticleStatusDraft) {
+				res.FailWithMsg("只能保存为草稿", c)
+				return
+			}
+			status = int8(enum.ArticleStatusDraft)
+		}
+	} else {
+		if status == 0 {
+			status = article.Status
+		}
 	}
 
 	err = global.DB.Model(&article).Select(

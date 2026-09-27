@@ -4,6 +4,7 @@ import (
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
+	"go-star/models/enum"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ type ArticleCreateRequest struct {
 	TagList     []string `json:"tagList"`                       // 标签列表
 	Cover       string   `json:"cover"`                         // 封面
 	OpenComment bool     `json:"openComment"`                   // 是否开启评论
-	Status      int8     `json:"status"`                        // 1草稿 2审核中 3已发布，可先默认 3
+	Status      int8     `json:"status"`                        // 1草稿 2审核中 3已发布
 }
 
 func (ArticleApi) ArticleCreateView(c *gin.Context) {
@@ -39,9 +40,16 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 		return
 	}
 
-	status := cr.Status
-	if status == 0 {
-		status = 3
+	status := int8(enum.ArticleStatusDraft)
+	if cr.Status != 0 {
+		status = cr.Status
+	}
+
+	if claims.Role != enum.AdminRole {
+		if status != int8(enum.ArticleStatusDraft) {
+			res.FailWithMsg("只能存为草稿", c)
+			return
+		}
 	}
 
 	err = global.DB.Create(&models.ArticleModel{

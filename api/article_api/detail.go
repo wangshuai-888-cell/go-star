@@ -4,6 +4,7 @@ import (
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
+	"go-star/models/enum"
 	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
@@ -30,6 +31,19 @@ func (ArticleApi) ArticleDetailView(c *gin.Context) {
 		}
 		// 如果数据库中有，就存入redis中一份
 		redis_article.SetDetail(article)
+	}
+
+	if article.Status != int8(enum.ArticleStatusPublished) {
+		if article.UserID != claims.UserID && claims.Role != enum.AdminRole {
+			res.FailWithMsg("文章不存在", c)
+			return
+		}
+	}
+
+	// 非公开文章，直接返回
+	if article.Status != int8(enum.ArticleStatusPublished) {
+		res.OKWithData(article, c)
+		return
 	}
 
 	// 浏览数先记 Redis，攒够再写数据库
