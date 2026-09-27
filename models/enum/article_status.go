@@ -7,4 +7,5 @@ const (
 	ArticleStatusReview    ArticleStatus = 2 // 审核中
 	ArticleStatusPublished ArticleStatus = 3 // 已发布
 	ArticleStatusRejected  ArticleStatus = 4 // 已驳回
+	ArticleStatusScheduled ArticleStatus = 5 // 定时待发布
 )

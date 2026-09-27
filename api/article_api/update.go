@@ -7,19 +7,21 @@ import (
 	"go-star/models/enum"
 	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ArticleUpdateRequest struct {
-	Title       string   `json:"title" binding:"required"`
-	Abstract    string   `json:"abstract"`
-	Content     string   `json:"content" binding:"required"`
-	CategoryID  uint     `json:"categoryID" binding:"required"`
-	TagList     []string `json:"tagList"`
-	Cover       string   `json:"cover"`
-	OpenComment bool     `json:"openComment"`
-	Status      int8     `json:"status"`
+	Title       string     `json:"title" binding:"required"`
+	Abstract    string     `json:"abstract"`
+	Content     string     `json:"content" binding:"required"`
+	CategoryID  uint       `json:"categoryID" binding:"required"`
+	TagList     []string   `json:"tagList"`
+	Cover       string     `json:"cover"`
+	OpenComment bool       `json:"openComment"`
+	Status      int8       `json:"status"`
+	PublishAt   *time.Time `json:"publishAt"` // 可选，定时发布时间
 }
 
 func (ArticleApi) ArticleUpdateView(c *gin.Context) {
@@ -64,8 +66,8 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 
 	if claims.Role != enum.AdminRole {
 		switch article.Status {
-		case int8(enum.ArticleStatusReview):
-			res.FailWithMsg("审核中不可修改", c)
+		case int8(enum.ArticleStatusReview), int8(enum.ArticleStatusScheduled):
+			res.FailWithMsg("审核中或定时待发布不可修改", c)
 			return
 		case int8(enum.ArticleStatusPublished):
 			// 已发布被改内容，回到草稿，重新提交
@@ -87,6 +89,7 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 	err = global.DB.Model(&article).Select(
 		"title", "abstract", "content", "category_id",
 		"tag_list", "cover", "open_comment", "status",
+		"publish_at",
 	).Updates(models.ArticleModel{
 		Title:       cr.Title,
 		Abstract:    cr.Abstract,
@@ -96,6 +99,7 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 		Cover:       cr.Cover,
 		OpenComment: cr.OpenComment,
 		Status:      status,
+		PublishAt:   cr.PublishAt,
 	}).Error
 
 	if err != nil {

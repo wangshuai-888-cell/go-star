@@ -7,6 +7,7 @@ import (
 	"go-star/models/enum"
 	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -77,6 +78,9 @@ func (ArticleApi) ArticleAuditView(c *gin.Context) {
 	if !cr.Pass {
 		next = enum.ArticleStatusRejected
 		msg = "已驳回"
+	} else if article.PublishAt != nil && article.PublishAt.After(time.Now()) {
+		next = enum.ArticleStatusScheduled
+		msg = "审核通过，已加入定时发布"
 	}
 	if err := global.DB.Model(&article).Update("status", next).Error; err != nil {
 		res.FailWithMsg("审核失败", c)
@@ -86,11 +90,15 @@ func (ArticleApi) ArticleAuditView(c *gin.Context) {
 
 	articleID := article.ID
 	if cr.Pass {
+		content := "你的文章《" + article.Title + "》已通过审核"
+		if next == enum.ArticleStatusScheduled {
+			content = "你的文章《" + article.Title + "》已通过审核，将于定时时间发布"
+		}
 		models.CreateUserMessage(models.UserMessageModel{
 			RevUserID: article.UserID,
 			Type:      enum.MessageTypeAuditPass,
 			Title:     "审核通过",
-			Content:   "你的文章《" + article.Title + "》已通过审核",
+			Content:   content,
 			ArticleID: &articleID,
 		})
 	} else {
