@@ -12,6 +12,7 @@ func ArticleRouter(r *gin.RouterGroup) {
 	r.POST("articles", middleware.AuthMiddleware, app.ArticleCreateView)
 	r.GET("articles", middleware.AuthMiddleware, app.ArticleListView)
 	r.GET("articles/hot", middleware.AuthMiddleware, app.ArticleHotListView) // 如果写在articles/:id后面，hot会被当做id
+	r.GET("articles/recommend", middleware.AuthMiddleware, app.ArticleRecommendView)
 	r.GET("articles/:id", middleware.AuthMiddleware, app.ArticleDetailView)
 	r.PUT("articles/:id", middleware.AuthMiddleware, app.ArticleUpdateView)
 	r.DELETE("articles/:id", middleware.AuthMiddleware, app.ArticleRemoveView)
