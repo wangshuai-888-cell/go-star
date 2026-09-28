@@ -132,9 +132,10 @@ func (UserApi) UpdateUserView(c *gin.Context) {
 }
 
 type UpdateConfRequest struct {
-	OpenCollect *bool `json:"openCollect"`
-	OpenFollow  *bool `json:"openFollow"`
-	OpenFans    *bool `json:"openFans"`
+	OpenCollect *bool     `json:"openCollect"`
+	OpenFollow  *bool     `json:"openFollow"`
+	OpenFans    *bool     `json:"openFans"`
+	LikeTags    *[]string `json:"likeTags"` // 兴趣标签，如 ["go","后端"]
 }
 
 func (UserApi) UpdateConfView(c *gin.Context) {
@@ -144,7 +145,7 @@ func (UserApi) UpdateConfView(c *gin.Context) {
 		return
 	}
 
-	if cr.OpenCollect == nil && cr.OpenFollow == nil && cr.OpenFans == nil {
+	if cr.OpenCollect == nil && cr.OpenFollow == nil && cr.OpenFans == nil && cr.LikeTags == nil {
 		res.FailWithMsg("请至少传入一个配置项", c)
 		return
 	}
@@ -167,6 +168,9 @@ func (UserApi) UpdateConfView(c *gin.Context) {
 		if cr.OpenFans != nil {
 			conf.OpenFans = *cr.OpenFans
 		}
+		if cr.LikeTags != nil {
+			conf.LikeTags = *cr.LikeTags
+		}
 		if err := global.DB.Create(&conf).Error; err != nil {
 			res.FailWithMsg("更新配置失败", c)
 			return
@@ -188,7 +192,13 @@ func (UserApi) UpdateConfView(c *gin.Context) {
 		updates["open_fans"] = *cr.OpenFans
 		conf.OpenFans = *cr.OpenFans
 	}
-	if err := global.DB.Model(&models.UserConfModel{}).Where("user_id = ?", claims.UserID).Updates(updates).Error; err != nil {
+	if cr.LikeTags != nil {
+		updates["like_tags"] = *cr.LikeTags
+		conf.LikeTags = *cr.LikeTags
+	}
+	if err := global.DB.Model(&models.UserConfModel{}).
+		Where("user_id = ?", claims.UserID).
+		Updates(updates).Error; err != nil {
 		res.FailWithMsg("更新配置失败", c)
 		return
 	}
