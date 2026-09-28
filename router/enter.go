@@ -31,6 +31,7 @@ func Run() {
 	logGroup := nr.Group("")
 	logGroup.Use(middleware.AdminMiddleware)
 	LogRouter(logGroup)
+	DataRouter(logGroup)
 
 	addr := global.Config.System.Addr()
 	r.Run(addr)
