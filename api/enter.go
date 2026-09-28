@@ -6,6 +6,7 @@ import (
 	categoryapi "go-star/api/category_api"
 	"go-star/api/collect_api"
 	"go-star/api/comment_api"
+	"go-star/api/data_api"
 	"go-star/api/history_api"
 	"go-star/api/image_api"
 	"go-star/api/log_api"
@@ -26,6 +27,7 @@ type Api struct {
 	NotificationApi notification_api.NotificationApi
 	BannerApi       banner_api.BannerApi
 	MessageApi      message_api.MessageApi
+	DataApi         data_api.DataApi
 }
 
 var App = Api{}
