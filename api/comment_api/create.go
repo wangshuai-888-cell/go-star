@@ -4,6 +4,7 @@ import (
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
+	"go-star/models/enum"
 	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
@@ -56,12 +57,21 @@ func (CommentApi) CommentCreateView(c *gin.Context) {
 			res.FailWithMsg("父评论不属于该文章", c)
 			return
 		}
+
+		// 时机回复对象（用于展示【回复】）
+		replyToCommentID := parent.ID
+		replyToUserID := parent.UserID
+		comment.ReplyToCommentID = &replyToCommentID
+		comment.ReplyToUserID = &replyToUserID
+
+		var rootID uint
 		if parent.RootParentID != nil {
-			comment.RootParentID = parent.RootParentID
+			rootID = *parent.RootParentID
 		} else {
-			rid := parent.ID
-			comment.RootParentID = &rid
+			rootID = parent.ID
 		}
+		comment.ParentID = &rootID
+		comment.RootParentID = &rootID
 	}
 	err := global.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&comment).Error; err != nil {
@@ -75,5 +85,19 @@ func (CommentApi) CommentCreateView(c *gin.Context) {
 	}
 	redis_article.AddHotScore(article.ID, redis_article.ScoreComment)
 	redis_article.ClearDetail(article.ID)
+
+	if comment.ReplyToUserID != nil && *comment.ReplyToUserID != claims.UserID {
+		articleID := article.ID
+		fromID := claims.UserID
+		models.CreateUserMessage(models.UserMessageModel{
+			RevUserID:  *comment.ReplyToUserID,
+			Type:       enum.MessageTypeCommentReply,
+			Title:      "评论回复",
+			Content:    "有人回复了你的评论",
+			ArticleID:  &articleID,
+			FromUserID: &fromID,
+		})
+	}
+
 	res.OKWithData(comment, c)
 }
