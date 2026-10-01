@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    container_name: go-star-app
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./settings.prod.yaml:/app/settings.docker.yaml:ro
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
