@@ -2,6 +2,7 @@
 local_settings.yaml
 prod_settings.yaml
 settings.prod.yaml
+go-star-linux
 tmp
 tmp/
 test

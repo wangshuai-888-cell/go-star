@@ -7,7 +7,8 @@ log:
   app: go-star
   dir: logs
 jwt:
-  expire: 3
+  expire: 3                 # access 过期：小时
+  refresh_expire: 168       # refresh 过期：小时（7天）
   secret: change-me
   issuer: your-issuer
 redis:
