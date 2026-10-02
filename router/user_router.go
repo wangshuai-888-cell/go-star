@@ -12,6 +12,7 @@ func UserRouter(r *gin.RouterGroup) {
 	app := api.App.UserApi
 	r.POST("user/login", middleware.RateLimitByIP("login", 10, time.Minute), app.LoginView) // 登录
 	r.POST("user/register", app.RegisterView)                                               // 注册
+	r.POST("user/refresh", app.RefreshView)                                                 // 刷新 token
 	r.POST("user/logout", app.LogoutView)                                                   // 退出
 	r.GET("user/info", middleware.AuthMiddleware, app.UserInfoView)                         // 获取用户信息
 	r.POST("user/changePwd", middleware.AuthMiddleware, app.ChangePwdView)                  // 修改密码

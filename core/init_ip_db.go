@@ -29,6 +29,9 @@ func GetIpAddr(ip string) (addr string) {
 	if ipUtils.HasLocalIPAddr(ip) {
 		return "内网"
 	}
+	if searcher == nil {
+		return "未知地址"
+	}
 	region, err := searcher.Search(ip)
 	if err != nil {
 		logrus.Warnf("错误的IP地址 %s", err)
