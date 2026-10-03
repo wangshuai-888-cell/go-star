@@ -14,6 +14,8 @@ func UserRouter(r *gin.RouterGroup) {
 	r.POST("user/register", app.RegisterView)                                               // 注册
 	r.POST("user/refresh", app.RefreshView)                                                 // 刷新 token
 	r.POST("user/logout", app.LogoutView)                                                   // 退出
+	r.GET("user/sessions", middleware.AuthMiddleware, app.SessionListView)                  // 设备列表
+	r.DELETE("user/sessions/:id", middleware.AuthMiddleware, app.SessionRemoveView)         // 踢下线
 	r.GET("user/info", middleware.AuthMiddleware, app.UserInfoView)                         // 获取用户信息
 	r.POST("user/changePwd", middleware.AuthMiddleware, app.ChangePwdView)                  // 修改密码
 	r.PUT("user/update", middleware.AuthMiddleware, app.UpdateUserView)                     // 更新用户信息
