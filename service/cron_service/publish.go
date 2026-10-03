@@ -1,6 +1,7 @@
 package cron_service
 
 import (
+	"context"
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
@@ -43,15 +44,35 @@ func PublishScheduledArticles() {
 	}
 }
 
-// 启动定时任务：每分钟扫一次
-func Run() {
+// 启动定时任务
+func Run(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 		for {
 			PublishScheduledArticles()
-			<-ticker.C
+			select {
+			case <-ctx.Done():
+				logrus.Info("定时发布任务已停止")
+				return
+			case <-ticker.C:
+			}
 		}
 	}()
 	logrus.Info("定时发布任务已启动")
+
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+		for {
+			CleanExpiredSessions()
+			select {
+			case <-ctx.Done():
+				logrus.Info("会话清理任务已停止")
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	logrus.Info("会话清理任务已启动")
 }
