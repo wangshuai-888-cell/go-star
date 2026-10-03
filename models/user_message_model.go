@@ -1,7 +1,6 @@
 package models
 
 import (
-	"go-star/global"
 	"go-star/models/enum"
 )
 
@@ -15,8 +14,4 @@ type UserMessageModel struct {
 	ArticleID  *uint            `json:"articleID"`  // 可选，关联文章
 	FromUserID *uint            `json:"fromUserID"` // 可选，触发者（如关注人）
 	IsRead     bool             `json:"isRead"`     // 是否已读
-}
-
-func CreateUserMessage(msg UserMessageModel) {
-	_ = global.DB.Create(&msg).Error // 发消息失败不影响主流程
 }
