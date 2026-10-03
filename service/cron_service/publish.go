@@ -5,6 +5,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
 	"time"
 
@@ -33,7 +34,7 @@ func PublishScheduledArticles() {
 		redis_article.ClearDetail(article.ID)
 
 		articleID := article.ID
-		models.CreateUserMessage(models.UserMessageModel{
+		message_service.Push(models.UserMessageModel{
 			RevUserID: article.UserID,
 			Type:      enum.MessageTypeAuditPass,
 			Title:     "文章已发布",

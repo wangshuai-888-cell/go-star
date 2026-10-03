@@ -5,6 +5,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
 
@@ -89,7 +90,7 @@ func (CommentApi) CommentCreateView(c *gin.Context) {
 	if comment.ReplyToUserID != nil && *comment.ReplyToUserID != claims.UserID {
 		articleID := article.ID
 		fromID := claims.UserID
-		models.CreateUserMessage(models.UserMessageModel{
+		message_service.Push(models.UserMessageModel{
 			RevUserID:  *comment.ReplyToUserID,
 			Type:       enum.MessageTypeCommentReply,
 			Title:      "评论回复",

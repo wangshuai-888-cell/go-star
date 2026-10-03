@@ -6,6 +6,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/message_service"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -53,7 +54,7 @@ func (UserApi) UserFollowView(c *gin.Context) {
 		}
 		followed = true
 		fromID := claims.UserID
-		models.CreateUserMessage(models.UserMessageModel{
+		message_service.Push(models.UserMessageModel{
 			RevUserID:  target.ID,
 			Type:       enum.MessageTypeFollow,
 			Title:      "新增关注",
