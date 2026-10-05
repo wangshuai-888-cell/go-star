@@ -1,54 +1,64 @@
 package message_service
 
 import (
-	"context"
 	"go-star/global"
 	"go-star/models"
+	"sync"
+	"sync/atomic"
 
 	"github.com/sirupsen/logrus"
 )
 
 var ch chan models.UserMessageModel
+var wg sync.WaitGroup
+var stopped atomic.Bool // atomic.Bool 是原子操作的布尔值
 
 const (
-	workerCount = 2   // 同时写库的数量
-	queueSize   = 100 // 队列的缓冲
+	workerCount = 2
+	queueSize   = 100
 )
 
-func Run(ctx context.Context) {
+func Run() {
 	ch = make(chan models.UserMessageModel, queueSize)
 
 	for i := 0; i < workerCount; i++ {
 		id := i + 1
+		wg.Add(1)
 		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					logrus.Infof("消息worker-%d 已停止", id)
-					return
-				case msg := <-ch:
-					if err := global.DB.Create(&msg).Error; err != nil {
-						logrus.Errorf("异步写消息失败: %v", err)
-					}
+			defer wg.Done() // 每结束一个协程，等待组计数器减1
+			// 管道关闭且取完后，range 自动结束
+			for msg := range ch {
+				if err := global.DB.Create(&msg).Error; err != nil {
+					logrus.Errorf("异步写消息失败: %v", err)
 				}
 			}
+			logrus.Infof("消息worker-%d 已停止（队列已排空）", id)
 		}()
 	}
 	logrus.Infof("消息异步队列已启动 worker=%d queue=%d", workerCount, queueSize)
 }
 
-// 业务方调用：把消息丢进队列
-func Push(msg models.UserMessageModel) {
+// HTTP 关完后再调：关闭管道并等待 worker 把剩余消息写完
+func Shutdown() {
 	if ch == nil {
+		return
+	}
+	stopped.Store(true) //
+	close(ch)
+	wg.Wait()
+	logrus.Info("消息队列已排空")
+}
+
+func Push(msg models.UserMessageModel) {
+	// 如果要停机了，则直接手动写入数据库
+	if ch == nil || stopped.Load() { // stopped.Load():读出stopped当前的值
 		_ = global.DB.Create(&msg).Error
 		return
 	}
 
 	select {
-	case ch <- msg:
-		// 丢进去了，接口不用等写库
+	case ch <- msg: // 如果还能塞得下，就说明队列还有空位
 	default:
-		// 队列满了：降级同步写，尽量不丢消息
 		logrus.Warn("消息队列已满，降级为同步写入")
 		_ = global.DB.Create(&msg).Error
 	}

@@ -26,8 +26,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cron_service.Run(ctx)    // 启动定时发布任务
-	message_service.Run(ctx) //启动站内信异步队列
+	cron_service.Run(ctx) // 启动定时发布任务
+	message_service.Run() //启动站内信异步队列
 
-	router.Run(ctx) // 启动gin服务
+	router.Run(ctx)            // 启动gin服务
+	message_service.Shutdown() // 关闭站内信异步队列
 }
