@@ -26,6 +26,8 @@ func FlagDB() {
 		&models.UserFollowModel{},
 		&models.UserMessageModel{},
 		&models.UserSessionModel{},
+		&models.SearchHotModel{},
+		&models.SearchHistoryModel{},
 	)
 	if err != nil {
 		logrus.Errorf("数据库迁移失败 %s", err)

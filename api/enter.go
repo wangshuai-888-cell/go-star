@@ -12,6 +12,7 @@ import (
 	"go-star/api/log_api"
 	"go-star/api/message_api"
 	"go-star/api/notification_api"
+	"go-star/api/search_api"
 	"go-star/api/user_api"
 )
 
@@ -28,6 +29,7 @@ type Api struct {
 	BannerApi       banner_api.BannerApi
 	MessageApi      message_api.MessageApi
 	DataApi         data_api.DataApi
+	SearchApi       search_api.SearchApi
 }
 
 var App = Api{}
