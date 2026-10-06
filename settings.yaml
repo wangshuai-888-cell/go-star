@@ -15,6 +15,13 @@ redis:
   addr: 127.0.0.1:6379
   password: ""
   db: 0
+kafka:
+  brokers:
+    - 127.0.0.1:9092
+  topic: go-star
+  group: go-star-local
+  username: ""
+  password: ""
 db:
   user: root
   password: ""

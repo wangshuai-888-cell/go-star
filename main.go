@@ -19,6 +19,7 @@ func main() {
 	core.InitLogrus()               // 打印日志
 	global.DB = core.InitDB()       // 连接数据库
 	global.Redis = core.InitRedis() // 连接redis
+	core.InitKafka()                // 探测 kafka
 	core.InitIPDB()                 // 加载 IP 地址库
 	flags.Run()                     // 根据运行命令参数，决定是否对数据库进行迁移
 
