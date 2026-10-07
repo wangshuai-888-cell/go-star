@@ -7,6 +7,7 @@ import (
 	"go-star/global"
 	"go-star/router"
 	"go-star/service/cron_service"
+	"go-star/service/kafka_service"
 	"go-star/service/message_service"
 	"os"
 	"os/signal"
@@ -27,9 +28,11 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cron_service.Run(ctx) // 启动定时发布任务
-	message_service.Run() //启动站内信异步队列
+	cron_service.Run(ctx)  // 启动定时发布任务
+	message_service.Run()  //启动站内信异步队列
+	kafka_service.Run(ctx) // 启动kafka消费
 
 	router.Run(ctx)            // 启动gin服务
+	kafka_service.Shutdown()   // 关闭kafka消费
 	message_service.Shutdown() // 关闭站内信异步队列
 }
