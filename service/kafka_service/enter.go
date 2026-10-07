@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 
 	"go-star/global"
 	"go-star/models"
@@ -17,6 +20,7 @@ import (
 )
 
 type SearchEvent struct {
+	EventID    string    `json:"eventID"`
 	UserID     uint      `json:"userID"`
 	Keyword    string    `json:"keyword"`
 	SearchedAt time.Time `json:"searchedAt"`
@@ -66,6 +70,7 @@ func consume(ctx context.Context) {
 				return
 			}
 			logrus.Errorf("kafka 拉消息失败: %v", err)
+			time.Sleep(time.Second) // 休眠1秒，避免频繁重试，不然会一直刷屏
 			continue
 		}
 
@@ -79,6 +84,7 @@ func consume(ctx context.Context) {
 
 		if err := persistSearch(ev); err != nil {
 			logrus.Errorf("消费搜索事件失败: %v", err)
+			time.Sleep(time.Second)
 			continue
 		}
 
@@ -86,18 +92,36 @@ func consume(ctx context.Context) {
 			logrus.Errorf("kafka 提交 offset 失败: %v", err)
 			continue
 		}
-		logrus.Infof("已消费搜索 keyword=%s userID=%d partition=%d offset=%d",
-			ev.Keyword, ev.UserID, m.Partition, m.Offset)
+		logrus.Infof("已消费搜索 eventID=%s keyword=%s userID=%d partition=%d offset=%d",
+			ev.EventID, ev.Keyword, ev.UserID, m.Partition, m.Offset)
 	}
 }
 
 func persistSearch(ev SearchEvent) error {
+	if ev.EventID == "" {
+		return fmt.Errorf("缺少eventID，拒绝消费")
+	}
+
 	return global.DB.Transaction(func(tx *gorm.DB) error {
+		err := tx.Create(&models.SearchEventModel{
+			EventID: ev.EventID,
+			UserID:  ev.UserID,
+			Keyword: ev.Keyword,
+		}).Error
+		if err != nil {
+			if isDuplicateKey(err) {
+				logrus.Infof("搜索事件已处理过了，跳过eventID=%s", ev.EventID)
+				return nil
+			}
+			// 如果有其他错误，则返回错误
+			return fmt.Errorf("记录搜索事件 eventID=%s: %w", ev.EventID, err)
+		}
+
 		var hot models.SearchHotModel
-		err := tx.Where("keyword = ?", ev.Keyword).Take(&hot).Error
+		err = tx.Where("keyword = ?", ev.Keyword).Take(&hot).Error
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("查询热词 keyword=%s: %w", ev.Keyword, err)
+				return fmt.Errorf("查询热词 keyword=%s:%w", ev.Keyword, err)
 			}
 			hot = models.SearchHotModel{
 				Keyword:      ev.Keyword,
@@ -126,9 +150,21 @@ func persistSearch(ev SearchEvent) error {
 	})
 }
 
+// EventID有唯一索引，在表中插入数据时会根据这个来判断是否重复
+func isDuplicateKey(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "Duplicate entry") || strings.Contains(msg, "1062")
+}
+
 func ProduceSearch(ev SearchEvent) error {
 	if writer == nil {
 		return errors.New("kafka writer 未启动")
+	}
+	if ev.EventID == "" {
+		ev.EventID = uuid.New().String()
 	}
 	b, err := json.Marshal(ev)
 	if err != nil {
