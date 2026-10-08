@@ -13,6 +13,7 @@ import (
 
 	"go-star/global"
 	"go-star/models"
+	"go-star/service/redis_service/redis_search"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
@@ -101,8 +102,8 @@ func persistSearch(ev SearchEvent) error {
 	if ev.EventID == "" {
 		return fmt.Errorf("缺少eventID，拒绝消费")
 	}
-
-	return global.DB.Transaction(func(tx *gorm.DB) error {
+	var skipped bool
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
 		err := tx.Create(&models.SearchEventModel{
 			EventID: ev.EventID,
 			UserID:  ev.UserID,
@@ -111,6 +112,7 @@ func persistSearch(ev SearchEvent) error {
 		if err != nil {
 			if isDuplicateKey(err) {
 				logrus.Infof("搜索事件已处理过了，跳过eventID=%s", ev.EventID)
+				skipped = true
 				return nil
 			}
 			// 如果有其他错误，则返回错误
@@ -148,6 +150,13 @@ func persistSearch(ev SearchEvent) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if !skipped {
+		redis_search.ClearHot()
+	}
+	return nil
 }
 
 // EventID有唯一索引，在表中插入数据时会根据这个来判断是否重复
