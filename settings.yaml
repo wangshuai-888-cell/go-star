@@ -20,6 +20,8 @@ kafka:
     - 127.0.0.1:9092
   topic: go-star
   group: go-star-local
+  message_topic: go-star-message
+  message_group: go-star-message-local
   username: ""
   password: ""
 db:

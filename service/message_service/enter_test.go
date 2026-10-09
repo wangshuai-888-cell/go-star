@@ -4,7 +4,6 @@ import (
 	"go-star/models"
 	"sync"
 	"testing"
-	"time"
 )
 
 func setupMemPersist(t *testing.T) *[]models.UserMessageModel {
@@ -25,30 +24,11 @@ func setupMemPersist(t *testing.T) *[]models.UserMessageModel {
 	return &got
 }
 
-func TestPushAndShutdownDrains(t *testing.T) {
+func TestPushWithoutKafkaWritesDirectly(t *testing.T) {
 	got := setupMemPersist(t)
-	Run()
-	Push(models.UserMessageModel{Title: "关注1", RevUserID: 4})
-	Push(models.UserMessageModel{Title: "关注2", RevUserID: 5})
-	Shutdown()
-	if len(*got) != 2 {
-		t.Fatalf("排空后应写入 2 条，实际 %d", len(*got))
-	}
-}
-
-func TestPushAfterShutdownWritesDirectly(t *testing.T) {
-	got := setupMemPersist(t)
-
-	Run()
-	Shutdown()
-
-	Push(models.UserMessageModel{Title: "停机后仍要留下"})
-	time.Sleep(20 * time.Millisecond)
-
+	writer = nil // 确保未启动 kafka
+	Push(models.UserMessageModel{Title: "无kafka时同步写", RevUserID: 1})
 	if len(*got) != 1 {
-		t.Fatalf("停机后 Push 应同步写入，实际 %d", len(*got))
-	}
-	if (*got)[0].Title != "停机后仍要留下" {
-		t.Errorf("title = %s", (*got)[0].Title)
+		t.Fatalf("应同步写入 1 条，实际 %d", len(*got))
 	}
 }
