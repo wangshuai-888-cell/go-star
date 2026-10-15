@@ -26,4 +26,9 @@ func UserRouter(r *gin.RouterGroup) {
 	r.POST("users/:id/follow", middleware.AuthMiddleware, app.UserFollowView)
 	r.GET("users/:id/follows", middleware.AuthMiddleware, app.UserFollowListView)
 	r.GET("users/:id/fans", middleware.AuthMiddleware, app.UserFansListView)
+	r.POST("user/signin", middleware.AuthMiddleware, app.SignInView)                     // 今日签到
+	r.GET("user/signin/today", middleware.AuthMiddleware, app.SignInTodayView)           // 查询今日是否签到
+	r.GET("user/signin/month", middleware.AuthMiddleware, app.SignInMonthView)           // 查询本月签到记录
+	r.GET("user/signin/continuous", middleware.AuthMiddleware, app.ContinuousSignInView) // 查询连续签到天数
+	r.POST("user/signin/sync", middleware.AuthMiddleware, app.SyncSignDataView)          // 同步签到数据
 }
