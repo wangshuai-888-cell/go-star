@@ -7,6 +7,7 @@ import (
 	"go-star/models/enum"
 	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
+	"go-star/service/redis_service/redis_tag"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -32,6 +33,9 @@ func PublishScheduledArticles() {
 			continue
 		}
 		redis_article.ClearDetail(article.ID)
+		if err := redis_tag.AddArticleTags(article.ID, article.TagList); err != nil {
+			logrus.Errorf("定时发布标签索引失败 id=%d: %v", article.ID, err)
+		}
 
 		articleID := article.ID
 		message_service.Push(models.UserMessageModel{

@@ -6,6 +6,7 @@ import (
 	"go-star/models"
 	"go-star/models/enum"
 	"go-star/service/redis_service/redis_article"
+	"go-star/service/redis_service/redis_tag"
 	"go-star/utils/jwts"
 	"time"
 
@@ -105,6 +106,24 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 	if err != nil {
 		res.FailWithMsg("修改失败", c)
 		return
+	}
+
+	//  标签索引同步：只维护“已发布”文章的标签
+	if article.Status == int8(enum.ArticleStatusPublished) {
+		if status == int8(enum.ArticleStatusPublished) {
+			// 还在发布状态：对比新旧标签，增量同步
+			oldTags, _ := redis_tag.GetArticleTags(article.ID)
+			addTags, removeTags := redis_tag.DiffTags(oldTags, cr.TagList)
+			for _, t := range removeTags {
+				_ = redis_tag.RemoveArticleTag(article.ID, t)
+			}
+			if len(addTags) > 0 {
+				_ = redis_tag.AddArticleTags(article.ID, addTags)
+			}
+		} else {
+			// 已发布被改回草稿：清掉标签索引
+			_ = redis_tag.RemoveArticleTags(article.ID)
+		}
 	}
 
 	redis_article.ClearDetail(article.ID)

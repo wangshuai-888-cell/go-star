@@ -5,10 +5,12 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/redis_service/redis_tag"
 	"go-star/utils/jwts"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type ArticleCreateRequest struct {
@@ -59,7 +61,7 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 		}
 	}
 
-	err = global.DB.Create(&models.ArticleModel{
+	article := models.ArticleModel{
 		Title:       cr.Title,
 		Abstract:    cr.Abstract,
 		Content:     cr.Content,
@@ -70,10 +72,16 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 		OpenComment: cr.OpenComment,
 		Status:      status,
 		PublishAt:   cr.PublishAt,
-	}).Error
+	}
+	err = global.DB.Create(&article).Error
 	if err != nil {
 		res.FailWithMsg("创建失败", c)
 		return
+	}
+	if status == int8(enum.ArticleStatusPublished) {
+		if err := redis_tag.AddArticleTags(article.ID, cr.TagList); err != nil {
+			logrus.Errorf("标签索引写入失败 articleID=%d: %v", article.ID, err)
+		}
 	}
 
 	res.OKWithMsg("创建成功", c)
