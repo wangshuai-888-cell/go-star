@@ -6,6 +6,7 @@ import (
 	"go-star/models"
 	"go-star/models/enum"
 	"go-star/service/redis_service/redis_article"
+	"go-star/service/redis_service/redis_tag"
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
@@ -42,5 +43,6 @@ func (ArticleApi) ArticleRemoveView(c *gin.Context) {
 	redis_article.ClearLook(article.ID)
 	redis_article.ClearDetail(article.ID)
 	redis_article.RemoveHot(article.ID)
+	_ = redis_tag.RemoveArticleTags(article.ID) // 清理标签关联表和Redis索引
 	res.OKWithMsg("删除成功", c)
 }

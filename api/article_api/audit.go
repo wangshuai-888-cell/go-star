@@ -7,10 +7,12 @@ import (
 	"go-star/models/enum"
 	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
+	"go-star/service/redis_service/redis_tag"
 	"go-star/utils/jwts"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 // 作者提交审核
@@ -88,6 +90,11 @@ func (ArticleApi) ArticleAuditView(c *gin.Context) {
 		return
 	}
 	redis_article.ClearDetail(article.ID)
+	if next == enum.ArticleStatusPublished {
+		if err := redis_tag.AddArticleTags(article.ID, article.TagList); err != nil {
+			logrus.Errorf("标签索引写入失败 articleID=%d: %v", article.ID, err)
+		}
+	}
 
 	articleID := article.ID
 	if cr.Pass {
