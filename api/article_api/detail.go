@@ -23,14 +23,10 @@ func (ArticleApi) ArticleDetailView(c *gin.Context) {
 	claims := _claims.(*jwts.MyClaims)
 
 	var article models.ArticleModel
-	// 如果redis中没有，再从数据库中找
+	// 缓存优先；未命中时GetDetail内部会合并并发查库（防击穿）
 	if !redis_article.GetDetail(idCr.ID, &article) {
-		if err := global.DB.Take(&article, idCr.ID).Error; err != nil {
-			res.FailWithMsg("文章不存在", c)
-			return
-		}
-		// 如果数据库中有，就存入redis中一份
-		redis_article.SetDetail(article)
+		res.FailWithMsg("文章不存在", c)
+		return
 	}
 
 	if article.Status != int8(enum.ArticleStatusPublished) {

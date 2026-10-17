@@ -3,6 +3,7 @@ module go-star
 go 1.26.1
 
 require (
+	github.com/alicebob/miniredis/v2 v2.39.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-playground/locales v0.14.1
@@ -12,8 +13,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lionsoul2014/ip2region/binding/golang v0.0.0-20260524121429-fac3d0376a7c
 	github.com/pkg/errors v0.9.1
+	github.com/segmentio/kafka-go v0.4.47
 	github.com/sirupsen/logrus v1.9.4
 	golang.org/x/crypto v0.53.0
+	golang.org/x/sync v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
@@ -22,7 +25,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/alicebob/miniredis/v2 v2.39.0 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
@@ -47,7 +49,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
-	github.com/segmentio/kafka-go v0.4.47 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
