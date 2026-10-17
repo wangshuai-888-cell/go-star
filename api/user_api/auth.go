@@ -83,14 +83,14 @@ func (UserApi) LoginView(c *gin.Context) {
 	var user models.UserModel
 	err = global.DB.Take(&user, "username = ?", cr.Username).Error
 	if err != nil {
-		log_service.NewLoginFail(c, enum.UserPwdLoginType, "用户名或密码错误", cr.Username, cr.Password)
+		log_service.NewLoginFail(c, enum.UserPwdLoginType, "用户名或密码错误", cr.Username)
 		res.FailWithMsg("用户名或密码错误", c)
 		return
 	}
 
 	// 对比密码是否正确
 	if !pwd.CheckPwd(user.Password, cr.Password) {
-		log_service.NewLoginFail(c, enum.UserPwdLoginType, "用户名或密码错误", cr.Username, cr.Password)
+		log_service.NewLoginFail(c, enum.UserPwdLoginType, "用户名或密码错误", cr.Username)
 		res.FailWithMsg("用户名或密码错误", c)
 		return
 	}
