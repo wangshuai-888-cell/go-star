@@ -15,7 +15,6 @@ type LogModel struct {
 	IsRead      bool              `json:"isRead"`      // 是否已读
 	LoginStatus bool              `json:"loginStatus"` // 登录状态
 	Username    string            `gorm:"size:32" json:"username"`
-	Pwd         string            `gorm:"size:32" json:"pwd"`
 	LoginType   enum.LoginType    `json:"loginType"`
 	ServiceName string            `gorm:"size: 32" json:"serviceName"`
 }
