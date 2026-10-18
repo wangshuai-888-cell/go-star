@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-star/global"
 	"go-star/models"
+	"go-star/utils/bloom"
 	"math/rand"
 	"time"
 
@@ -64,6 +65,11 @@ func setNullDetail(id uint) {
 要降级为直接查库，保证业务可用
 */
 func GetDetail(id uint, article *models.ArticleModel) (ok bool) {
+	// 布隆过滤器：ID 肯定不存在则直接拦截，Redis和DB都不碰、
+	if !bloom.Test(id) {
+		logrus.Infof("布隆拦截不存在的文章 id=%d", id)
+		return false
+	}
 	// Redis可用时先查缓存
 	if global.Redis != nil {
 		val, err := global.Redis.Get(detailKey(id)).Result()

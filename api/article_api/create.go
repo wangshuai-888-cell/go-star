@@ -6,6 +6,7 @@ import (
 	"go-star/models"
 	"go-star/models/enum"
 	"go-star/service/redis_service/redis_tag"
+	"go-star/utils/bloom"
 	"go-star/utils/jwts"
 	"time"
 
@@ -83,6 +84,6 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 			logrus.Errorf("标签索引写入失败 articleID=%d: %v", article.ID, err)
 		}
 	}
-
+	bloom.Add(article.ID)
 	res.OKWithMsg("创建成功", c)
 }
