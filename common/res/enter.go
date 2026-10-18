@@ -46,9 +46,9 @@ func OKWithData(data any, c *gin.Context) {
 	Response{SuccessCode, data, "成功"}.Json(c)
 }
 
-func OKWithList(list any, count int,c *gin.Context) {
+func OKWithList(list any, count int, c *gin.Context) {
 	Response{SuccessCode, map[string]any{
-		"list": list,
+		"list":  list,
 		"count": count,
 	}, "成功"}.Json(c)
 }
