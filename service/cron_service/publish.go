@@ -8,6 +8,7 @@ import (
 	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
 	"go-star/service/redis_service/redis_tag"
+	"go-star/utils/lock"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -55,7 +56,13 @@ func Run(ctx context.Context) {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 		for {
-			PublishScheduledArticles()
+			ok, release := lock.Acquire("cron_publish", 30*time.Second)
+			if ok {
+				PublishScheduledArticles()
+				release()
+			} else {
+				logrus.Info("定时发布任务未抢到分布式锁，本轮跳过")
+			}
 			select {
 			case <-ctx.Done():
 				logrus.Info("定时发布任务已停止")
@@ -70,7 +77,13 @@ func Run(ctx context.Context) {
 		ticker := time.NewTicker(10 * time.Minute)
 		defer ticker.Stop()
 		for {
-			CleanExpiredSessions()
+			ok, release := lock.Acquire("cron_session_clean", 30*time.Second)
+			if ok {
+				CleanExpiredSessions()
+				release() // 任务完成立刻释放，不能defer
+			} else {
+				logrus.Info("定时发布任务未抢到分布式锁，本轮跳过")
+			}
 			select {
 			case <-ctx.Done():
 				logrus.Info("会话清理任务已停止")
