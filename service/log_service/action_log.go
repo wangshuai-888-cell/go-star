@@ -204,7 +204,6 @@ func (ac *ActionLog) Save() (id uint) {
 	if err == nil && claims != nil {
 		userID = claims.UserID
 	}
-	
 
 	log := models.LogModel{
 		LogType: enum.ActionLogType,
