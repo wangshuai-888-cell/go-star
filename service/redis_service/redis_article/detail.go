@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-star/global"
 	"go-star/models"
+	"math/rand"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ const (
 	detailExpire = 10 * time.Minute // 文章详情缓存10分钟
 	nullExpire   = 1 * time.Minute  // 空值缓存1分钟，防缓存穿透
 	nullValue    = "NULL"           // 空值标记：文章不存在时写入，和正常的JSON区分
+	expireJitter = 5 * time.Minute  // 过期随机抖动范围，防止大量key同时过期导致缓存雪崩
 )
 
 // sf 用来合并同一篇文章的并发查库请求（防缓存击穿）
@@ -24,6 +26,12 @@ var sf singleflight.Group
 
 func detailKey(id uint) string {
 	return fmt.Sprintf("article:detail:%d", id)
+}
+
+// detailTTL 返回带随机抖动的过期时间（10~15分钟随机）
+// 避免大量 key 同一时刻写入、同一时刻过期，集中打爆 DB（缓存雪崩）
+func detailTTL() time.Duration {
+	return detailExpire + time.Duration(rand.Int63n(int64(expireJitter)))
 }
 
 func SetDetail(article models.ArticleModel) {
@@ -34,7 +42,9 @@ func SetDetail(article models.ArticleModel) {
 	if err != nil {
 		return
 	}
-	_ = global.Redis.Set(detailKey(article.ID), data, detailExpire).Err()
+	if err := global.Redis.Set(detailKey(article.ID), data, detailTTL()).Err(); err != nil {
+		logrus.Errorf("回填文章详情缓存失败 id=%d: %v", article.ID, err)
+	}
 }
 
 func setNullDetail(id uint) {
