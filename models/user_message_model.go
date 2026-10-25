@@ -11,7 +11,8 @@ type UserMessageModel struct {
 	Type       enum.MessageType `json:"type"`      // 消息类型
 	Title      string           `gorm:"size:64" json:"title"`
 	Content    string           `gorm:"size:256" json:"content"`
-	ArticleID  *uint            `json:"articleID"`  // 可选，关联文章
-	FromUserID *uint            `json:"fromUserID"` // 可选，触发者（如关注人）
-	IsRead     bool             `json:"isRead"`     // 是否已读
+	ArticleID  *uint            `json:"articleID"`                          // 可选，关联文章
+	FromUserID *uint            `json:"fromUserID"`                         // 可选，触发者（如关注人）
+	IsRead     bool             `json:"isRead"`                             // 是否已读
+	EventID    string           `gorm:"size:36;uniqueIndex" json:"eventID"` // 幂等键：同一条业务消息的唯一标识，消费端去重用
 }

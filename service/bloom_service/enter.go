@@ -43,11 +43,11 @@ func Run(ctx context.Context) {
 	instance = fmt.Sprintf("%d-%d", os.Getpid(), time.Now().UnixNano())
 	group := k.BloomGroup + "-" + instance
 	reader = kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  k.Brokers,
-		Topic:    k.BloomTopic,
-		GroupID:  group,
-		MinBytes: 1,
-		MaxBytes: 10e6,
+		Brokers:     k.Brokers,
+		Topic:       k.BloomTopic,
+		GroupID:     group,
+		MinBytes:    1,
+		MaxBytes:    10e6,
 		StartOffset: kafka.LastOffset, // 新实例从最新开始：历史由 Init 从DB加载，不重放Kafka旧消息
 	})
 

@@ -11,8 +11,10 @@ import (
 	"go-star/global"
 	"go-star/models"
 
+	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -26,7 +28,8 @@ var persist = func(msg models.UserMessageModel) error {
 	if global.DB == nil {
 		return nil
 	}
-	return global.DB.Create(&msg).Error
+	// 唯一键冲突直接忽略：同一条消息被重复消费时只保留第一条（幂等）
+	return global.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&msg).Error
 }
 
 func Run(ctx context.Context) {
@@ -40,7 +43,7 @@ func Run(ctx context.Context) {
 		Addr:         kafka.TCP(k.Brokers...),
 		Topic:        k.MessageTopic,
 		Balancer:     &kafka.Hash{},
-		RequiredAcks: kafka.RequireOne,
+		RequiredAcks: kafka.RequireOne, // RequiredAcks 是发送消息时要等多少个 Kafka 节点确认收到，kafka.RequireOne 表示"只要 leader 节点收到就返回成功"
 	}
 
 	group := k.MessageGroup
@@ -100,6 +103,9 @@ func consume(ctx context.Context) {
 }
 
 func Push(msg models.UserMessageModel) {
+	if msg.EventID == "" {
+		msg.EventID = uuid.NewString() // 幂等键：生成一次，Kafka重试/重复消费多共享它
+	}
 	if writer == nil {
 		if err := persist(msg); err != nil {
 			logrus.Errorf("站内信同步写入失败: %v", err)
@@ -107,7 +113,7 @@ func Push(msg models.UserMessageModel) {
 		return
 	}
 
-	// 可选：带上 eventID，以后做幂等用；库表暂不强制
+	// eventID 已在入口生成，随消息投递，消费端用它做幂等
 	b, err := json.Marshal(msg)
 	if err != nil {
 		logrus.Errorf("站内信序列化失败: %v", err)
