@@ -8,4 +8,6 @@ type Kafka struct {
 	MessageGroup string   `yaml:"message_group"` // 站内信消费组
 	Username     string   `yaml:"username"`      // 无 SASL 则留空
 	Password     string   `yaml:"password"`
+	BloomTopic   string   `yaml:"bloom_topic"` // 布隆广播：go-start-bloom
+	BloomGroup   string   `yaml:"bloom_group"` // 布隆广播组前缀（实际 group = 前缀 + 实例标识）
 }

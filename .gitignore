@@ -1,5 +1,7 @@
 .idea
+.vscode
 local_settings.yaml
+local_settings2.yaml
 prod_settings.yaml
 settings.prod.yaml
 go-star-linux
@@ -7,8 +9,10 @@ tmp
 tmp/
 test
 学习记录.md
+个人学习库.md
 main
 main.exe
 build-errors.log
 logs/*
+logs2/*
 uploads/*
