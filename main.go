@@ -6,10 +6,10 @@ import (
 	"go-star/flags"
 	"go-star/global"
 	"go-star/router"
+	"go-star/service/bloom_service"
 	"go-star/service/cron_service"
 	"go-star/service/kafka_service"
 	"go-star/service/message_service"
-	"go-star/service/bloom_service"
 	"go-star/utils/bloom"
 	"os"
 	"os/signal"
@@ -36,8 +36,8 @@ func main() {
 	bloom_service.Run(ctx)
 	kafka_service.Run(ctx) // 启动kafka消费
 
-	router.Run(ctx)            // 启动gin服务
-	kafka_service.Shutdown()   // 关闭kafka消费
+	router.Run(ctx)          // 启动gin服务
+	kafka_service.Shutdown() // 关闭kafka消费
 	bloom_service.Shutdown()
 	message_service.Shutdown() // 关闭站内信异步队列
 }
