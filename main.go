@@ -9,6 +9,7 @@ import (
 	"go-star/service/cron_service"
 	"go-star/service/kafka_service"
 	"go-star/service/message_service"
+	"go-star/service/bloom_service"
 	"go-star/utils/bloom"
 	"os"
 	"os/signal"
@@ -32,9 +33,11 @@ func main() {
 
 	cron_service.Run(ctx)    // 启动定时发布任务
 	message_service.Run(ctx) //启动站内信异步队列
-	kafka_service.Run(ctx)   // 启动kafka消费
+	bloom_service.Run(ctx)
+	kafka_service.Run(ctx) // 启动kafka消费
 
 	router.Run(ctx)            // 启动gin服务
 	kafka_service.Shutdown()   // 关闭kafka消费
+	bloom_service.Shutdown()
 	message_service.Shutdown() // 关闭站内信异步队列
 }
