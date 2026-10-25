@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // 登录注册成功后返回给前端的双token
@@ -140,16 +142,23 @@ func (UserApi) RegisterView(c *gin.Context) {
 		Password: hashPwd,
 		Role:     enum.UserRole,
 	}
-	err = global.DB.Create(&user).Error
+	err = global.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&user).Error; err != nil {
+			return err
+		}
+		if err := tx.Create(&models.UserConfModel{
+			UserID:      user.ID,
+			OpenCollect: false,
+		}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
+		logrus.Errorf("注册失败 username=%s：%v", cr.Username, err)
 		res.FailWithMsg("注册失败", c)
 		return
 	}
-
-	_ = global.DB.Create(&models.UserConfModel{
-		UserID:      user.ID,
-		OpenCollect: false,
-	}).Error
 
 	tokens, err := issueTokens(c, user)
 	if err != nil {
