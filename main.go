@@ -8,6 +8,7 @@ import (
 	"go-star/router"
 	"go-star/service/bloom_service"
 	"go-star/service/cron_service"
+	"go-star/service/history_service"
 	"go-star/service/kafka_service"
 	"go-star/service/message_service"
 	"go-star/utils/bloom"
@@ -34,10 +35,12 @@ func main() {
 	cron_service.Run(ctx)    // 启动定时发布任务
 	message_service.Run(ctx) //启动站内信异步队列
 	bloom_service.Run(ctx)
-	kafka_service.Run(ctx) // 启动kafka消费
+	kafka_service.Run(ctx)   // 启动kafka消费
+	history_service.Run(ctx) // 浏览历史异步批量写入
 
 	router.Run(ctx)          // 启动gin服务
 	kafka_service.Shutdown() // 关闭kafka消费
 	bloom_service.Shutdown()
 	message_service.Shutdown() // 关闭站内信异步队列
+	history_service.Shutdown() // 关闭浏览历史队列，刷完剩余数据再退出
 }
