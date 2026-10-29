@@ -79,3 +79,29 @@ func HasTokenBlackByGin(c *gin.Context) (blk BlackType, ok bool) {
 	}
 	return HasTokenBlack(token)
 }
+
+// SetPwdChangedAt：记录用户最近一次修改密码的时间，用于让改密前签发的access立即失效
+func SetPwdChangedAt(userID uint, at time.Time) error {
+	key := fmt.Sprintf("jwt:pwd_changed:%d", userID)
+	// 保留7天：refresh最长也就7天，超过这个时间旧token早就过期了
+	return global.Redis.Set(key, at.Unix(), 7*24*time.Hour).Err()
+}
+
+// GetPwdChangedAt：获取用户最近一次修改密码的时间戳，0 表示从没改过
+func GetPwdChangedAt(userID uint) int64 {
+	key := fmt.Sprintf("jwt:pwd_changed:%d", userID)
+	val, err := global.Redis.Get(key).Int64()
+	if err != nil {
+		return 0
+	}
+	return val
+}
+
+// HasPwdChangedAfter：判断token签发之后密码是否被修改过（是则这个token作废）
+func HasPwdChangedAfter(userID uint, issuedAt int64) bool {
+	changedAt := GetPwdChangedAt(userID)
+	if changedAt == 0 {
+		return false
+	}
+	return issuedAt < changedAt
+}

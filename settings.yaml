@@ -9,7 +9,7 @@ log:
 jwt:
   expire: 3                 # access 过期：小时
   refresh_expire: 168       # refresh 过期：小时（7天）
-  secret: change-me
+  secret: 请替换为你自己的随机密钥
   issuer: your-issuer
 redis:
   addr: 127.0.0.1:6379

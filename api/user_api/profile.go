@@ -7,8 +7,11 @@ import (
 	"go-star/service/redis_service/redis_jwt"
 	"go-star/utils/jwts"
 	"go-star/utils/pwd"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // 获取用户信息接口
@@ -35,6 +38,15 @@ type ChangePwdRequest struct {
 }
 
 func (UserApi) ChangePwdView(c *gin.Context) {
+	// 危险操作前先拿到并校验 token
+	token := c.GetHeader("token")
+	if token == "" {
+		token = c.Query("token")
+	}
+	if token == "" {
+		res.FailWithMsg("token不能为空", c)
+		return
+	}
 	var cr ChangePwdRequest
 	err := c.ShouldBindJSON(&cr)
 
@@ -72,22 +84,33 @@ func (UserApi) ChangePwdView(c *gin.Context) {
 		return
 	}
 
-	// 更新密码
-	err = global.DB.Model(&user).Update("password", hashPwd).Error
+	// 用事务包住“更新密码 + 作废所有会话”：要么都成功，要么都回滚
+	err = global.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&user).Update("password", hashPwd).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.UserSessionModel{}).
+			Where("user_id = ? AND is_revoked = ?", user.ID, false).
+			Update("is_revoked", true).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
-		res.FailWithMsg("更新密码失败", c)
+		logrus.Errorf("修改密码失败 user=%d：%v", user.ID, err)
+		res.FailWithMsg("修改密码失败", c)
 		return
 	}
 
-	// 更新后拉黑当前token，重新登录
-	token := c.GetHeader("token")
-	if token == "" {
-		token = c.Query("token")
-	}
-	if token == "" {
-		res.FailWithMsg("token不能为空", c)
+	// DB 提交成功后再写Redis：让所有设备上的旧access立即失效
+	if err := redis_jwt.SetPwdChangedAt(user.ID, time.Now()); err != nil {
+		// 密码已改成功，这里失败只会退化成"等 access 自然过期"，必须如实告知
+		logrus.Errorf("记录改密时间失败 user=%d：%v", user.ID, err)
+		res.FailWithMsg("密码已修改，请用新密码重新登录", c)
 		return
 	}
+
+	// 当前token拉黑
 	redis_jwt.TokenBlack(token, redis_jwt.UserBlackType)
 
 	res.OKWithMsg("修改密码成功", c)
