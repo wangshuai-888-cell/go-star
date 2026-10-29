@@ -28,6 +28,7 @@ func GetToken(claims Claims) (string, error) {
 		Claims: claims,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Duration(global.Config.Jwt.Expire) * time.Hour).Unix(), // 过期时间
+			IssuedAt:  time.Now().Unix(),                                                          // 新增：签发时间，用于改密码后旧token失效判断
 			Issuer:    global.Config.Jwt.Issuer,                                                   // 签发人
 		},
 	}
