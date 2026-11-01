@@ -9,7 +9,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AuthMiddleware 只校验登录身份，不校验具体权限点
 func AuthMiddleware(c *gin.Context) {
+	permMiddleware("", c)
+}
+
+// PermMiddleware 返回带权限点校验的中间件
+// 要求当前角色持有该权限点，否则返回权限不足
+func PermMiddleware(p enum.Permission) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		permMiddleware(p, c)
+	}
+}
+
+// permMiddleware 中间件公共实现：验签 → 改密校验 → 黑名单校验 → 权限点校验
+// 权限判断采用白名单模式，失败即拒绝，避免脏数据或漏配导致越权
+func permMiddleware(p enum.Permission, c *gin.Context) {
 	claims, err := jwts.ParseTokenByGin(c)
 	if err != nil {
 		res.FailWithError(err, c)
@@ -25,38 +40,31 @@ func AuthMiddleware(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	c.Set("claims", claims)
-}
-
-func AdminMiddleware(c *gin.Context) {
-	claims, err := jwts.ParseTokenByGin(c)
-	if err != nil {
-		res.FailWithError(err, c)
-		c.Abort()
-		return
-	}
-	if !checkTokenVersion(claims, c) { // 新增
-		return
-	}
-	if claims.Role != enum.AdminRole {
-		res.FailWithMsg("权限错误", c)
-		c.Abort()
-		return
-	}
-	blcType, ok := redis_jwt.HasTokenBlackByGin(c)
-	if ok {
-		res.FailWithMsg(blcType.Msg(), c)
+	if p != "" && !enum.HasPerm(claims.Role, p) {
+		res.FailWithMsg("权限不足", c)
 		c.Abort()
 		return
 	}
 	c.Set("claims", claims)
 }
 
-// checkTokenVersion token签发时间早于最近一次改密码时间 -> 该token已作废
+// checkTokenVersion 校验token是否已因凭证变更（改密/改角色）而作废
+// 只靠iat时间戳比对，不信任token里的role快照
 func checkTokenVersion(claims *jwts.MyClaims, c *gin.Context) bool {
 	// 没有 iat 的是改造前签发的旧token，一律视为无效（安全优先）
-	if claims.IssuedAt == 0 || redis_jwt.HasPwdChangedAfter(claims.UserID, claims.IssuedAt) {
+	if claims.IssuedAt == 0 {
+		res.FailWithMsg("登录状态已失效，请重新登录", c)
+		c.Abort()
+		return false
+	}
+	if redis_jwt.HasPwdChangedAfter(claims.UserID, claims.IssuedAt) {
 		res.FailWithMsg("密码已修改，请重新登录", c)
+		c.Abort()
+		return false
+	}
+	// 角色变更后旧access仍携带着旧role快照，必须同样作废，否则降级不生效
+	if redis_jwt.HasRoleChangedAfter(claims.UserID, claims.IssuedAt) {
+		res.FailWithMsg("账号权限已变更，请重新登录", c)
 		c.Abort()
 		return false
 	}

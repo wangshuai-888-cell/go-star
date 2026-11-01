@@ -30,7 +30,7 @@ func (ArticleApi) ArticleRemoveView(c *gin.Context) {
 		return
 	}
 
-	if article.UserID != claims.UserID && claims.Role != enum.AdminRole {
+	if article.UserID != claims.UserID && !enum.HasPerm(claims.Role, enum.ArticleDeleteAny) {
 		res.FailWithMsg("权限不足", c)
 		return
 	}

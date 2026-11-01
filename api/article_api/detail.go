@@ -31,7 +31,7 @@ func (ArticleApi) ArticleDetailView(c *gin.Context) {
 	}
 
 	if article.Status != int8(enum.ArticleStatusPublished) {
-		if article.UserID != claims.UserID && claims.Role != enum.AdminRole {
+		if article.UserID != claims.UserID && !enum.HasPerm(claims.Role, enum.ArticleViewAll) {
 			res.FailWithMsg("文章不存在", c)
 			return
 		}

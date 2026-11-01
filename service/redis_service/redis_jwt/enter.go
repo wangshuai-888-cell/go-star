@@ -105,3 +105,30 @@ func HasPwdChangedAfter(userID uint, issuedAt int64) bool {
 	}
 	return issuedAt < changedAt
 }
+
+// SetRoleChangedAt：记录用户最近一次角色变更的时间，用于让变更前签发的access立即失效
+// 不单独作废会话：refresh时RefreshView会从DB重查用户并重新签发，拿到的role自然是最新的
+func SetRoleChangedAt(userID uint, at time.Time) error {
+	key := fmt.Sprintf("jwt:role_changed:%d", userID)
+	// 保留7天：超过这个时间旧token早就过期了
+	return global.Redis.Set(key, at.Unix(), 7*24*time.Hour).Err()
+}
+
+// GetRoleChangedAt：获取用户最近一次角色变更的时间戳，0 表示从未变更
+func GetRoleChangedAt(userID uint) int64 {
+	key := fmt.Sprintf("jwt:role_changed:%d", userID)
+	val, err := global.Redis.Get(key).Int64()
+	if err != nil {
+		return 0
+	}
+	return val
+}
+
+// HasRoleChangedAfter：判断token签发之后角色是否被变更过（是则这个token作废）
+func HasRoleChangedAfter(userID uint, issuedAt int64) bool {
+	changedAt := GetRoleChangedAt(userID)
+	if changedAt == 0 {
+		return false
+	}
+	return issuedAt < changedAt
+}

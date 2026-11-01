@@ -3,6 +3,7 @@ package router
 import (
 	"go-star/api"
 	"go-star/middleware"
+	"go-star/models/enum"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,5 +22,5 @@ func ArticleRouter(r *gin.RouterGroup) {
 	r.POST("articles/:id/top", middleware.AuthMiddleware, app.ArticleTopView)
 	r.GET("users/:id/top-articles", middleware.AuthMiddleware, app.UserTopArticleListView)
 	r.POST("articles/:id/submit", middleware.AuthMiddleware, app.ArticleSubmitView)
-	r.POST("articles/:id/audit", middleware.AdminMiddleware, app.ArticleAuditView)
+	r.POST("articles/:id/audit", middleware.PermMiddleware(enum.ArticleAudit), app.ArticleAuditView)
 }

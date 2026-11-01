@@ -50,7 +50,8 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 		return
 	}
 
-	if article.UserID != claims.UserID && claims.Role != enum.AdminRole {
+	// 归属校验（数据维度）+ 改任意文章权限（身份维度），两者是不同维度
+	if article.UserID != claims.UserID && !enum.HasPerm(claims.Role, enum.ArticleUpdateAny) {
 		res.FailWithMsg("权限不足", c)
 		return
 	}
@@ -65,7 +66,7 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 
 	status := cr.Status
 
-	if claims.Role != enum.AdminRole {
+	if !enum.HasPerm(claims.Role, enum.ArticlePublishDirect) {
 		switch article.Status {
 		case int8(enum.ArticleStatusReview), int8(enum.ArticleStatusScheduled):
 			res.FailWithMsg("审核中或定时待发布不可修改", c)

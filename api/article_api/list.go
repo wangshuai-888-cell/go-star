@@ -35,7 +35,8 @@ func (ArticleApi) ArticleListView(c *gin.Context) {
 		query = query.Where("category_id = ?", cr.CategoryID)
 	}
 
-	if claims.Role == enum.AdminRole {
+	// 是否能看所有状态的文章：管理员与审核员有此权限，普通用户只能看已发布/自己的
+	if enum.HasPerm(claims.Role, enum.ArticleViewAll) {
 		if cr.Status > 0 {
 			query = query.Where("status = ?", cr.Status)
 		}

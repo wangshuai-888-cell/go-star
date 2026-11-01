@@ -55,7 +55,7 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 		status = cr.Status
 	}
 
-	if claims.Role != enum.AdminRole {
+	if !enum.HasPerm(claims.Role, enum.ArticlePublishDirect) {
 		if status != int8(enum.ArticleStatusDraft) {
 			res.FailWithMsg("只能存为草稿", c)
 			return

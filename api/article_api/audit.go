@@ -31,7 +31,7 @@ func (ArticleApi) ArticleSubmitView(c *gin.Context) {
 		res.FailWithMsg("文章不存在", c)
 		return
 	}
-	if article.UserID != claims.UserID && claims.Role != enum.AdminRole {
+	if article.UserID != claims.UserID && !enum.HasPerm(claims.Role, enum.ArticleSubmitAny) {
 		res.FailWithMsg("权限不足", c)
 		return
 	}

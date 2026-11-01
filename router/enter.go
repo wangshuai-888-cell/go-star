@@ -31,12 +31,8 @@ func Run(ctx context.Context) {
 	BannerRouter(nr)
 	MessageRouter(nr)
 	SearchRouter(nr)
-
-	// 日志接口需要管理员权限，在入口显式挂中间件，避免污染整个 /api 组
-	logGroup := nr.Group("")
-	logGroup.Use(middleware.AdminMiddleware)
-	LogRouter(logGroup)
-	DataRouter(logGroup)
+	LogRouter(nr)
+	DataRouter(nr)
 
 	addr := global.Config.System.Addr()
 	srv := &http.Server{
