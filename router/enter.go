@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,10 +17,14 @@ func Run(ctx context.Context) {
 	r := gin.Default()                        // 创建gin实例
 
 	r.Static("/uploads", "uploads")
+	// 指标端点：Prometheus 定时来抓这里
+	// 注意挂在r而不是nr（/api）下，否则会被LogMiddleware 记录
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	nr := r.Group("/api")
 
 	nr.Use(middleware.LogMiddleware)
+	nr.Use(middleware.MetricsMiddleware) // 新增
 	UserRouter(nr)
 	CategoryRouter(nr)
 	ArticleRouter(nr)
