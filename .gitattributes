@@ -1,0 +1,18 @@
+# ============================================================
+# 换行符策略
+#
+# 背景：本仓库在 Windows 上开发，但部署脚本要在 Linux 上运行。
+# Windows 的 core.autocrlf=true 会悄悄把 LF 转成 CRLF 存进仓库，
+# 导致 Linux 上拿到带 \r 的脚本，报 `$'\r': command not found`。
+#
+# 规则优先级高于 core.autocrlf，这里强制指定：
+#   *.sh  → 永远 LF（bash 的 shebang 不能被 \r 污染）
+#   *.ps1 → 永远 CRLF（Windows PowerShell 的习惯）
+#
+# 注意：BOM 不受 gitattributes 控制，它是文件内容的一部分。
+#   build.ps1 必须带 UTF-8 BOM（PowerShell 5.1 才能正确解析中文）
+#   deploy.sh 绝对不能带 BOM（否则 shebang 失效）
+# ============================================================
+
+*.sh  text eol=lf
+*.ps1 text eol=crlf

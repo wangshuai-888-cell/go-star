@@ -5,6 +5,10 @@ local_settings2.yaml
 prod_settings.yaml
 settings.prod.yaml
 go-star-linux
+go-star-linux.new
+go-star-linux.bak.*
+app.log
+nohup.out
 tmp
 tmp/
 test
