@@ -24,6 +24,8 @@ kafka:
   message_group: go-star-message-local
   username: ""
   password: ""
+  bloom_topic: go-star-bloom
+  bloom_group: go-star-bloom
 db:
   user: root
   password: ""

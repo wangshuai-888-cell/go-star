@@ -51,11 +51,12 @@ func Run(ctx context.Context) {
 		group = k.Group + "-message"
 	}
 	reader = kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  k.Brokers,
-		Topic:    k.MessageTopic,
-		GroupID:  group,
-		MinBytes: 1,
-		MaxBytes: 10e6,
+		Brokers:     k.Brokers,
+		Topic:       k.MessageTopic,
+		GroupID:     group,
+		StartOffset: kafka.LastOffset, // 新消费组从最新消息开始，不重放历史
+		MinBytes:    1,
+		MaxBytes:    10e6,
 	})
 
 	wg.Add(1)

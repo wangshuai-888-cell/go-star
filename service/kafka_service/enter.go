@@ -47,11 +47,12 @@ func Run(ctx context.Context) {
 	}
 
 	reader = kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  k.Brokers, // 连接kafka的地址
-		Topic:    k.Topic,   // 主题
-		GroupID:  k.Group,   // 消费组
-		MinBytes: 1,         // 最小读取消息大小
-		MaxBytes: 10e6,      // 最大读取消息大小
+		Brokers:     k.Brokers,        // 连接kafka的地址
+		Topic:       k.Topic,          // 主题
+		GroupID:     k.Group,          // 消费组
+		StartOffset: kafka.LastOffset, // 新消费组从最新消息开始，不重放历史
+		MinBytes:    1,                // 最小读取消息大小
+		MaxBytes:    10e6,             // 最大读取消息大小
 	})
 
 	wg.Add(1)
