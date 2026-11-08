@@ -1,15 +1,19 @@
 package comment_api
 
 import (
+	"context"
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/ai_service"
 	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
 	"go-star/utils/jwts"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -40,6 +44,27 @@ func (CommentApi) CommentCreateView(c *gin.Context) {
 	}
 	if !article.OpenComment {
 		res.FailWithMsg("评论已关闭", c)
+		return
+	}
+	// AI 内容审核：同步调用，拦截违规评论（不入库）
+	// 超时3秒。正常响应1-2秒，用户请求上下文，用户断开时AI调用同步取消
+	auditStart := time.Now()
+	auditCtx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	passed, auditErr := ai_service.AuditComment(auditCtx, cr.Content)
+	cancel()
+
+	// 统一记录审核结果，便于统计拦截率
+	logrus.Infof("评论审核完成 articleID=%d userID=%d 结果=%v 耗时=%v",
+		article.ID, claims.UserID, passed, time.Since(auditStart))
+
+	if auditErr != nil {
+		// fail-open：AI 不可用时放行，只记日志，避免误伤正常用户
+		logrus.Warnf("评论审核服务不可用，降级放行 articleID=%d userID=%d: %v",
+			article.ID, claims.UserID, auditErr)
+	} else if !passed {
+		logrus.Infof("评论审核拦截 articleID=%d userID=%d 内容前20字=%.20s",
+			article.ID, claims.UserID, cr.Content)
+		res.FailWithMsg("评论内容不符合社区规范，请修改后重试", c)
 		return
 	}
 	comment := models.CommentModel{
