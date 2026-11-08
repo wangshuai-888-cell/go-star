@@ -87,34 +87,80 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 		}
 	}
 	bloom_service.Broadcast(article.ID)
-	// 用户没填摘要时，异步用 AI 生成，不阻塞创建接口
-	if article.Abstract == "" && status == int8(enum.ArticleStatusPublished) {
-		go func(id uint, title, content string) {
+	if status == int8(enum.ArticleStatusPublished) && (article.Abstract == "" || len(article.TagList) == 0) {
+		go func(id uint, title, content, abstract string, tagList []string) {
 			defer func() {
 				if r := recover(); r != nil {
-					logrus.Errorf("AI 摘要 goroutine panic articleID=%d: %v", id, r)
+					logrus.Errorf("AI 增强 goroutine panic articleID=%d: %v", id, r)
 				}
 			}()
 			// 必须用 context.Background()：请求结束后 c.Request.Context() 会被取消
 			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 			defer cancel()
 
-			summary, err := ai_service.GenerateSummary(ctx, title, content)
+			// ===== ① 摘要 =====
+			if abstract == "" {
+				summary, err := ai_service.GenerateSummary(ctx, title, content)
+				if err != nil {
+					logrus.Errorf("AI 摘要生成失败 articleID=%d: %v", id, err)
+				} else if summary != "" {
+					// 条件更新：摘要仍为空才写，防止覆盖用户编辑时填的内容
+					result := global.DB.Model(&models.ArticleModel{}).
+						Where("id = ? AND (abstract = '' OR abstract IS NULL)", id).
+						Update("abstract", summary)
+					if result.Error != nil {
+						logrus.Errorf("AI 摘要写入失败 articleID=%d: %v", id, result.Error)
+					} else if result.RowsAffected == 0 {
+						logrus.Infof("AI 摘要跳过：用户已填写摘要 articleID=%d", id)
+					} else {
+						logrus.Infof("AI 摘要生成成功 articleID=%d 长度=%d", id, len([]rune(summary)))
+					}
+				}
+			}
+
+			// ===== ② 标签 =====
+			if len(tagList) > 0 {
+				return
+			}
+			candidates, err := redis_tag.ListAllTags(50)
 			if err != nil {
-				logrus.Errorf("AI 摘要生成失败 articleID=%d: %v", id, err)
+				logrus.Errorf("AI 标签候选集查询失败 articleID=%d: %v", id, err)
 				return
 			}
-			if summary == "" {
+			logrus.Infof("AI 标签候选集 articleID=%d 数量=%d", id, len(candidates))
+
+			tags, err := ai_service.GenerateTags(ctx, title, content, candidates)
+			if err != nil {
+				logrus.Errorf("AI 标签生成失败 articleID=%d: %v", id, err)
 				return
 			}
-			if err := global.DB.Model(&models.ArticleModel{}).
-				Where("id = ?", id).
-				Update("abstract", summary).Error; err != nil {
-				logrus.Errorf("AI 摘要写入失败 articleID=%d: %v", id, err)
+			if len(tags) == 0 {
+				logrus.Infof("AI 标签为空，跳过 articleID=%d", id)
 				return
 			}
-			logrus.Infof("AI 摘要生成成功 articleID=%d 长度=%d", id, len([]rune(summary)))
-		}(article.ID, article.Title, article.Content)
+
+			// 条件更新：tag_list 仍为空才写，防止覆盖用户编辑时填的标签
+			// 必须用 Updates + 结构体，TagList 有 serializer:json，用 Update("tag_list", ...) 不会走序列化
+			result := global.DB.Model(&models.ArticleModel{}).
+				Where("id = ? AND (tag_list = '[]' OR tag_list = '' OR tag_list IS NULL)", id).
+				Select("tag_list").
+				Updates(models.ArticleModel{TagList: tags})
+			if result.Error != nil {
+				logrus.Errorf("AI 标签写入文章失败 articleID=%d: %v", id, result.Error)
+				return
+			}
+			if result.RowsAffected == 0 {
+				logrus.Infof("AI 标签跳过：用户已填写标签 articleID=%d", id)
+				return
+			}
+
+			// 写 tag 表 + article_tag 表 + Redis 双向索引
+			if err := redis_tag.AddArticleTags(id, tags); err != nil {
+				logrus.Errorf("AI 标签索引写入失败 articleID=%d: %v", id, err)
+				return
+			}
+			logrus.Infof("AI 标签生成成功 articleID=%d tags=%v", id, tags)
+		}(article.ID, article.Title, article.Content, article.Abstract, article.TagList)
 	}
 	res.OKWithMsg("创建成功", c)
 }

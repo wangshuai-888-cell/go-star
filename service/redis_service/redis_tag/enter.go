@@ -386,3 +386,20 @@ func DiffTags(oldTags, newTags []string) (addTags, removeTags []string) {
 	}
 	return
 }
+
+// ListAllTags 取全站已有标签作为AI候选集（按文章数降序）
+// limit 控制 prompt长度：标签少时全取，多了按热度截断
+func ListAllTags(limit int) ([]string, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	var names []string
+	err := global.DB.Model(&models.TagModel{}).
+		Order("article_count DESC, id ASC").
+		Limit(limit).
+		Pluck("name", &names).Error
+	if err != nil {
+		return nil, err
+	}
+	return names, nil
+}
