@@ -8,4 +8,5 @@ type Config struct {
 	Jwt    Jwt    `yaml:"jwt"`
 	Redis  Redis  `yaml:"redis"`
 	Kafka  Kafka  `yaml:"kafka"`
+	AI     AI     `yaml:"ai"` // ← 新增
 }

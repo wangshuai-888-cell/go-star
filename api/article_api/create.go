@@ -1,10 +1,12 @@
 package article_api
 
 import (
+	"context"
 	"go-star/common/res"
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/ai_service"
 	"go-star/service/bloom_service"
 	"go-star/service/redis_service/redis_tag"
 	"go-star/utils/jwts"
@@ -85,5 +87,34 @@ func (ArticleApi) ArticleCreateView(c *gin.Context) {
 		}
 	}
 	bloom_service.Broadcast(article.ID)
+	// 用户没填摘要时，异步用 AI 生成，不阻塞创建接口
+	if article.Abstract == "" && status == int8(enum.ArticleStatusPublished) {
+		go func(id uint, title, content string) {
+			defer func() {
+				if r := recover(); r != nil {
+					logrus.Errorf("AI 摘要 goroutine panic articleID=%d: %v", id, r)
+				}
+			}()
+			// 必须用 context.Background()：请求结束后 c.Request.Context() 会被取消
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
+
+			summary, err := ai_service.GenerateSummary(ctx, title, content)
+			if err != nil {
+				logrus.Errorf("AI 摘要生成失败 articleID=%d: %v", id, err)
+				return
+			}
+			if summary == "" {
+				return
+			}
+			if err := global.DB.Model(&models.ArticleModel{}).
+				Where("id = ?", id).
+				Update("abstract", summary).Error; err != nil {
+				logrus.Errorf("AI 摘要写入失败 articleID=%d: %v", id, err)
+				return
+			}
+			logrus.Infof("AI 摘要生成成功 articleID=%d 长度=%d", id, len([]rune(summary)))
+		}(article.ID, article.Title, article.Content)
+	}
 	res.OKWithMsg("创建成功", c)
 }

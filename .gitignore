@@ -19,3 +19,6 @@ build-errors.log
 logs/*
 logs2/*
 uploads/*
+*.exe
+*.exe~
+go-star-linux*
