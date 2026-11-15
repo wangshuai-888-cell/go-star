@@ -38,6 +38,7 @@ func Run(ctx context.Context) {
 	SearchRouter(nr)
 	LogRouter(nr)
 	DataRouter(nr)
+	AiRouter(nr)
 
 	addr := global.Config.System.Addr()
 	srv := &http.Server{

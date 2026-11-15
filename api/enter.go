@@ -1,6 +1,7 @@
 package api
 
 import (
+	"go-star/api/ai_api"
 	"go-star/api/article_api"
 	"go-star/api/banner_api"
 	categoryapi "go-star/api/category_api"
@@ -30,6 +31,7 @@ type Api struct {
 	MessageApi      message_api.MessageApi
 	DataApi         data_api.DataApi
 	SearchApi       search_api.SearchApi
+	AiApi           ai_api.AiApi
 }
 
 var App = Api{}
