@@ -88,6 +88,11 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 		}
 	}
 
+	// 更新前先记下旧值：下面要判断内容是否真的变了，没变就不重算向量
+	// 只改个封面或评论开关却重算一次 embedding，纯属白烧 token
+	oldTitle, oldAbstract, oldContent := article.Title, article.Abstract, article.Content
+	oldPublished := article.Status == int8(enum.ArticleStatusPublished)
+
 	err = global.DB.Model(&article).Select(
 		"title", "abstract", "content", "category_id",
 		"tag_list", "cover", "open_comment", "status",
@@ -128,5 +133,11 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 	}
 
 	redis_article.ClearDetail(article.ID)
+	// 向量同步：内容变了要重算；草稿首次转发布也要补上（那时候还没向量）
+	// 不重算的话，搜索命中的还是修改之前的标题和正文
+	contentChanged := oldTitle != cr.Title || oldAbstract != cr.Abstract || oldContent != cr.Content
+	if status == int8(enum.ArticleStatusPublished) && (contentChanged || !oldPublished) {
+		asyncRebuildEmbedding(article.ID, cr.Title, cr.Abstract, cr.Content)
+	}
 	res.OKWithMsg("修改成功", c)
 }

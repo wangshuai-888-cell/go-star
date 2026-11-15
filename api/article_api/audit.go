@@ -94,6 +94,9 @@ func (ArticleApi) ArticleAuditView(c *gin.Context) {
 		if err := redis_tag.AddArticleTags(article.ID, article.TagList); err != nil {
 			logrus.Errorf("标签索引写入失败 articleID=%d: %v", article.ID, err)
 		}
+		// 草稿阶段不走 AI 增强，审核通过是它第一次成为"已发布"
+		// 摘要、标签、向量三样东西可能都还是空的，这里一次性补齐
+		asyncEnhanceArticle(article.ID, article.Title, article.Content, article.Abstract, article.TagList)
 	}
 
 	articleID := article.ID

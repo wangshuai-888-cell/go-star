@@ -7,4 +7,8 @@ type AI struct {
 	APIKey  string `yaml:"api_key"`
 	Model   string `yaml:"model"`           // 例如 deepseek-chat
 	Timeout int    `yaml:"timeout_seconds"` // 单次请求超时，建议 60
+
+	// 向量模型（语义搜索用）
+	EmbeddingModel string `yaml:"embedding_model"` // 例如 embedding-3
+	EmbeddingDim   int    `yaml:"embedding_dim"`   // 向量维度，建议 1024
 }

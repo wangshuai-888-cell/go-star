@@ -10,6 +10,7 @@ import (
 	"go-star/utils/jwts"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func (ArticleApi) ArticleRemoveView(c *gin.Context) {
@@ -44,5 +45,12 @@ func (ArticleApi) ArticleRemoveView(c *gin.Context) {
 	redis_article.ClearDetail(article.ID)
 	redis_article.RemoveHot(article.ID)
 	_ = redis_tag.RemoveArticleTags(article.ID) // 清理标签关联表和Redis索引
+
+	// 向量在独立表里，文章是物理删除，不手动清理就会留下孤儿行
+	// 孤儿行不会污染搜索结果（查询时会按文章状态过滤），但白占内存，白算余弦
+	if cerr := global.DB.Where("article_id = ?", article.ID).
+		Delete(&models.ArticleEmbeddingModel{}).Error; cerr != nil {
+		logrus.Errorf("向量清理失败 articleID=%d: %v", article.ID, cerr)
+	}
 	res.OKWithMsg("删除成功", c)
 }
