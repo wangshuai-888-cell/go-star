@@ -5,6 +5,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/article_service"
 	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
 	"go-star/service/redis_service/redis_tag"
@@ -96,7 +97,7 @@ func (ArticleApi) ArticleAuditView(c *gin.Context) {
 		}
 		// 草稿阶段不走 AI 增强，审核通过是它第一次成为"已发布"
 		// 摘要、标签、向量三样东西可能都还是空的，这里一次性补齐
-		asyncEnhanceArticle(article.ID, article.Title, article.Content, article.Abstract, article.TagList)
+		article_service.AsyncEnhanceArticle(article.ID, article.Title, article.Content, article.Abstract, article.TagList)
 	}
 
 	articleID := article.ID

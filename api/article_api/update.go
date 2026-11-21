@@ -5,6 +5,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/article_service"
 	"go-star/service/redis_service/redis_article"
 	"go-star/service/redis_service/redis_tag"
 	"go-star/utils/jwts"
@@ -137,7 +138,7 @@ func (ArticleApi) ArticleUpdateView(c *gin.Context) {
 	// 不重算的话，搜索命中的还是修改之前的标题和正文
 	contentChanged := oldTitle != cr.Title || oldAbstract != cr.Abstract || oldContent != cr.Content
 	if status == int8(enum.ArticleStatusPublished) && (contentChanged || !oldPublished) {
-		asyncRebuildEmbedding(article.ID, cr.Title, cr.Abstract, cr.Content)
+		article_service.AsyncRebuildEmbedding(article.ID, cr.Title, cr.Abstract, cr.Content)
 	}
 	res.OKWithMsg("修改成功", c)
 }

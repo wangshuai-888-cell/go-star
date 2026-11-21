@@ -5,6 +5,7 @@ import (
 	"go-star/global"
 	"go-star/models"
 	"go-star/models/enum"
+	"go-star/service/article_service"
 	"go-star/service/message_service"
 	"go-star/service/redis_service/redis_article"
 	"go-star/service/redis_service/redis_tag"
@@ -37,6 +38,10 @@ func PublishScheduledArticles() {
 		if err := redis_tag.AddArticleTags(article.ID, article.TagList); err != nil {
 			logrus.Errorf("定时发布标签索引失败 id=%d: %v", article.ID, err)
 		}
+
+		// 定时发布是文章第一次成为"已发布"，摘要/标签/向量三样可能都还是空的
+		// 和创建、审核走同一条增强链路；异步执行，不拖慢这一轮扫描
+		article_service.AsyncEnhanceArticle(article.ID, article.Title, article.Content, article.Abstract, article.TagList)
 
 		articleID := article.ID
 		message_service.Push(models.UserMessageModel{
