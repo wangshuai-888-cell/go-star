@@ -17,6 +17,8 @@ func Run(ctx context.Context) {
 	r := gin.Default()                        // 创建gin实例
 
 	r.Static("/uploads", "uploads")
+	// 前端调试页：纯静态，挂在 /web 而不是 /api 下，避免被日志中间件当成接口记录
+	r.Static("/web", "web")
 	// 指标端点：Prometheus 定时来抓这里
 	// 注意挂在r而不是nr（/api）下，否则会被LogMiddleware 记录
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))

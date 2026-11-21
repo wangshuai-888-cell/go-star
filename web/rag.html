@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>站内 AI 问答</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 16px;
+    font: 15px/1.7 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f6f7f9; color: #1f2328;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+  .row { display: flex; gap: 8px; margin-bottom: 12px; }
+  input {
+    flex: 1; padding: 10px 12px; border: 1px solid #d0d7de; border-radius: 8px;
+    font-size: 14px; background: #fff; outline: none;
+  }
+  input:focus { border-color: #0969da; }
+  button {
+    padding: 10px 18px; border: 0; border-radius: 8px; background: #0969da;
+    color: #fff; font-size: 14px; cursor: pointer;
+  }
+  button:disabled { background: #9db8d6; cursor: not-allowed; }
+  button.ghost { background: #eaeef2; color: #1f2328; }
+  #status { font-size: 13px; color: #6b7280; min-height: 20px; margin-bottom: 12px; }
+  #answer {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 16px; min-height: 80px; white-space: pre-wrap; word-break: break-word;
+  }
+  #answer:empty, #sources:empty { display: none; }
+  #sources { margin-top: 16px; }
+  .label { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+  .card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 8px; margin-bottom: 8px; font-size: 14px;
+  }
+  .card .score { font-size: 12px; color: #6b7280; font-variant-numeric: tabular-nums; }
+  .weak { opacity: .55; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>站内 AI 问答</h1>
+  <div class="sub">基于站内已发布文章的向量检索，只回答文章里写过的内容</div>
+
+  <div class="row">
+    <input id="token" placeholder="粘贴 accessToken（只在本机存一次）">
+    <button class="ghost" id="save">保存</button>
+  </div>
+
+  <div class="row">
+    <input id="q" placeholder="比如：缓存击穿是什么">
+    <button id="ask">提问</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="answer"></div>
+  <div id="sources"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id)
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+
+let token = localStorage.getItem('rag_token') || ''
+$('token').value = token
+
+$('save').onclick = () => {
+  token = $('token').value.trim()
+  localStorage.setItem('rag_token', token)
+  $('status').textContent = token ? 'token 已保存' : 'token 已清空'
+}
+
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') ask() })
+$('ask').onclick = ask
+
+async function ask() {
+  const question = $('q').value.trim()
+  if (!question) return
+  if (!token) { $('status').textContent = '先填 token'; return }
+
+  $('answer').textContent = ''
+  $('sources').innerHTML = ''
+  $('status').textContent = '检索中…'
+  $('ask').disabled = true
+  const t0 = performance.now()
+
+  try {
+    const resp = await fetch('/api/ai/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'token': token },
+      body: JSON.stringify({ question })
+    })
+
+    if (!resp.ok) {
+      $('status').textContent = `请求失败：HTTP ${resp.status}`
+      return
+    }
+    if (!resp.body) {
+      $('status').textContent = '当前浏览器不支持流式读取'
+      return
+    }
+
+    const reader = resp.body.getReader()
+    const decoder = new TextDecoder('utf-8')
+    let buffer = ''
+    let started = false
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      // stream:true 必须加：一个汉字 3 字节，可能被切在两个 chunk 之间
+      buffer += decoder.decode(value, { stream: true })
+
+      // 按空行切帧，最后一段可能是半帧，留着等下一轮补全
+      const frames = buffer.split('\n\n')
+      buffer = frames.pop()
+
+      for (const frame of frames) {
+        const line = frame.trim()
+        if (!line.startsWith('data:')) continue
+        const raw = line.slice(5).trim()
+        if (!raw) continue
+
+        if (raw === '[DONE]') {
+          const sec = ((performance.now() - t0) / 1000).toFixed(2)
+          $('status').textContent = `完成，用时 ${sec}s`
+          return
+        }
+
+        let msg
+        try { msg = JSON.parse(raw) } catch { continue }
+
+        if (msg.error) { $('status').textContent = msg.error; continue }
+        if (msg.sources) { renderSources(msg.sources, $('answer').textContent); continue }
+        if (msg.content) {
+          if (!started) { started = true; $('status').textContent = '生成中…' }
+          $('answer').textContent += msg.content
+        }
+      }
+    }
+  } catch (e) {
+    $('status').textContent = '连接失败：' + e.message
+  } finally {
+    $('ask').disabled = false
+  }
+}
+
+const SOURCE_SCORE_FLOOR = 0.55 // 低于这个分数不作为来源展示
+const REFUSAL_MARK = '暂未涉及'
+const REFUSAL_MAX_LEN = 25 // 纯拒答约 15 字，部分命中远超这个数
+
+function renderSources(list, answerText) {
+  if (!list || !list.length) return
+
+  const shown = list.filter((s, i) => i === 0 || s.score >= SOURCE_SCORE_FLOOR)
+  if (!shown.length) return
+
+  // 必须同时满足"含拒答词"和"整体很短"，否则部分命中的回答会被误伤
+  const text = (answerText || '').trim()
+  const refused = text.includes(REFUSAL_MARK) && text.length <= REFUSAL_MAX_LEN
+
+  const label = refused ? '最接近的文章（但未能回答此问题）' : '参考来源'
+
+  $('sources').innerHTML =
+    `<div class="label${refused ? ' weak' : ''}">${label}</div>` +
+    shown.map(s => `
+      <div class="card${refused ? ' weak' : ''}">
+        <span>${esc(s.title)}</span>
+        <span class="score">相似度 ${s.score.toFixed(3)}</span>
+      </div>`).join('')
+}
+</script>
+</body>
+</html>
