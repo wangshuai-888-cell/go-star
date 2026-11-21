@@ -6,6 +6,7 @@ import (
 	"go-star/flags"
 	"go-star/global"
 	"go-star/router"
+	"go-star/service/article_service"
 	"go-star/service/bloom_service"
 	"go-star/service/cron_service"
 	"go-star/service/history_service"
@@ -27,6 +28,12 @@ func main() {
 	core.InitKafka() // 探测 kafka
 	core.InitIPDB()  // 加载 IP 地址库
 	flags.Run()      // 根据运行命令参数，决定是否对数据库进行迁移
+
+	// 批量回填向量：一次性任务，跑完退出，不启动HTTP服务
+	if flags.FlagOptions.Embed {
+		article_service.BackfillEmbedding(context.Background())
+		os.Exit(0)
+	}
 
 	// 监听ctrl+c或者kill信号，触发后ctx会被取消
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

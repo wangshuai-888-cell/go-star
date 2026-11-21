@@ -2,6 +2,7 @@ package article_service
 
 import (
 	"context"
+	"fmt"
 	"go-star/global"
 	"go-star/models"
 	"go-star/service/ai_service"
@@ -140,17 +141,17 @@ func enrichTags(ctx context.Context, id uint, title, content string, tagList []s
 
 // enrichEmbedding 为文章生成语义搜索用的向量
 // 每篇已发布文章都必须有，和用户是否填了摘要、标签无关
-func enrichEmbedding(ctx context.Context, id uint, title, abstract, content string) {
+func enrichEmbedding(ctx context.Context, id uint, title, abstract, content string) error {
 	embedText := buildEmbedSource(title, abstract, content)
 
 	vectors, err := ai_service.Embed(ctx, []string{embedText})
 	if err != nil {
 		logrus.Errorf("AI 向量生成失败 articleID=%d: %v", id, err)
-		return
+		return err
 	}
 	if len(vectors) == 0 || len(vectors[0]) == 0 {
 		logrus.Errorf("AI 向量为空 articleID=%d", id)
-		return
+		return fmt.Errorf("AI 向量为空")
 	}
 
 	row := models.ArticleEmbeddingModel{
@@ -166,10 +167,11 @@ func enrichEmbedding(ctx context.Context, id uint, title, abstract, content stri
 		DoUpdates: clause.AssignmentColumns([]string{"model_name", "dim", "source_text", "vector", "updated_at"}),
 	}).Create(&row).Error; err != nil {
 		logrus.Errorf("AI 向量写入失败 articleID=%d: %v", id, err)
-		return
+		return err
 	}
 
 	logrus.Infof("AI 向量生成成功 articleID=%d 维度=%d 长度=%d", id, row.Dim, len([]rune(embedText)))
+	return nil
 }
 
 // buildEmbedSource 拼向量化的原文
