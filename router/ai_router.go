@@ -12,4 +12,5 @@ func AiRouter(r *gin.RouterGroup) {
 	g := r.Group("ai")
 	g.Use(middleware.AuthMiddleware)
 	g.POST("chat", app.ChatStreamView)
+	g.POST("ask", app.AskStreamView)
 }
