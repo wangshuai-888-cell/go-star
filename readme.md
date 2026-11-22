@@ -3,6 +3,8 @@
 ### prometheus.exe // 启动普罗米修斯
 ### grafana.exe server // 启动grafana
 
+### http://127.0.0.1:8080/web/rag.html
+
 ### 上传本项目到生产
 1. .\scripts\build.ps1
 2. 编译完顺手验证嵌入了什么：go version -m .\go-star-linux.new | Select-String "vcs"
