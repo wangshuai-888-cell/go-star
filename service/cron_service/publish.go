@@ -60,14 +60,25 @@ func Run(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
+		// 这个for循环是死循环，每隔一分钟，执行一次for循环中的逻辑
 		for {
-			ok, release := lock.Acquire("cron_publish", 30*time.Second)
-			if ok {
+			func() {
+				// defer的作用域是“它所在的函数”，而不是“它所在的代码块”
+				// 先注册，后执行
+				defer func() {
+					if r := recover(); r != nil {
+						logrus.Errorf("定时发布本轮 panic：%v", r)
+					}
+				}()
+
+				ok, release := lock.Acquire("cron_publish", 30*time.Second)
+				if !ok {
+					logrus.Info("定时发布任务未抢到分布式锁，本轮跳过")
+					return
+				}
+				defer release() // 后注册，先执行
 				PublishScheduledArticles()
-				release()
-			} else {
-				logrus.Info("定时发布任务未抢到分布式锁，本轮跳过")
-			}
+			}()
 			select {
 			case <-ctx.Done():
 				logrus.Info("定时发布任务已停止")
@@ -82,13 +93,23 @@ func Run(ctx context.Context) {
 		ticker := time.NewTicker(10 * time.Minute)
 		defer ticker.Stop()
 		for {
-			ok, release := lock.Acquire("cron_session_clean", 30*time.Second)
-			if ok {
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						logrus.Errorf("会话清理本轮 panic: %v", r)
+					}
+				}()
+
+				ok, release := lock.Acquire("cron_session_clean", 30*time.Second)
+				if !ok {
+					logrus.Info("会话清理任务未抢到分布式锁，本轮跳过")
+					return
+				}
+				defer release()
+
 				CleanExpiredSessions()
-				release() // 任务完成立刻释放，不能defer
-			} else {
-				logrus.Info("定时发布任务未抢到分布式锁，本轮跳过")
-			}
+			}()
+
 			select {
 			case <-ctx.Done():
 				logrus.Info("会话清理任务已停止")
